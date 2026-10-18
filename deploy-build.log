@@ -1,0 +1,39 @@
+ Image robinahs-shop:local Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 508B 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile:
+#2 transferring dockerfile: 1.40kB 0.1s done
+#2 DONE 0.5s
+
+#3 [internal] load metadata for docker.io/library/elixir:1.19-slim
+#3 DONE 5.8s
+
+#4 [internal] load .dockerignore
+#4 transferring context:
+#4 transferring context: 118B 0.1s done
+#4 DONE 0.2s
+
+#5 [builder  1/12] FROM docker.io/library/elixir:1.19-slim@sha256:5ac9237ec0de4af06336b31cb54e232c76f16bcda53dbd509f567a44f6d6e8af
+#5 ...
+
+#6 [internal] load build context
+#6 DONE 0.0s
+
+#5 [builder  1/12] FROM docker.io/library/elixir:1.19-slim@sha256:5ac9237ec0de4af06336b31cb54e232c76f16bcda53dbd509f567a44f6d6e8af
+#5 resolve docker.io/library/elixir:1.19-slim@sha256:5ac9237ec0de4af06336b31cb54e232c76f16bcda53dbd509f567a44f6d6e8af 0.1s done
+#5 CACHED
+
+#7 [runner 2/6] RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl libstdc++6 openssl && rm -rf /var/lib/apt/lists/*     && groupadd --gid 10001 shop && useradd --uid 10001 --gid shop --home-dir /app --no-create-home shop     && mkdir -p /app /data && chown -R shop:shop /app /data
+#7 CACHED
+
+#8 [runner 3/6] WORKDIR /app
+#8 CACHED
+
+#6 [internal] load build context
+#6 transferring context: 4.18MB 1.5s done
+#6 DONE 4.7s
+
+#9 [builder  2/12] RUN apt-get update && apt-get install -y --no-install-recommends build-essential git ca-certificates && rm -rf /var/lib/apt/lists/*

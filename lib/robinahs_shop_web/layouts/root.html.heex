@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" /><meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="csrf-token" content={Plug.CSRFProtection.get_csrf_token()} />
+    <meta
+      name="description"
+      content="Robinah’s Shop and General Merchandise in Koranorya, Mbarara. Explore everyday essentials and enquire directly on WhatsApp."
+    />
+    <title>
+      {assigns[:page_title] || "Robinah’s Shop"} · Robinah’s Shop &amp; General Merchandise
+    </title>
+    <link rel="manifest" href={~p"/site.webmanifest"} />
+    <link rel="icon" type="image/x-icon" href={~p"/favicon.ico"} sizes="any" />
+    <link rel="icon" type="image/svg+xml" href={~p"/favicon.svg"} />
+    <link rel="apple-touch-icon" sizes="180x180" href={~p"/brand/icon-180.png"} />
+    <link rel="icon" type="image/png" sizes="32x32" href={~p"/brand/icon-32.png"} />
+    <link rel="icon" type="image/png" sizes="48x48" href={~p"/brand/icon-48.png"} />
+    <link rel="icon" type="image/png" sizes="192x192" href={~p"/brand/icon-192.png"} />
+    <link rel="icon" type="image/png" sizes="512x512" href={~p"/brand/icon-512.png"} />
+    <meta name="theme-color" content="#0737B8" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
+    <script defer src={~p"/brand/launch.js"}>
+    </script>
+    <noscript>
+      <style>
+        .launch-screen {
+          display: none !important;
+        }
+      </style>
+    </noscript>
+    <script phx-track-static type="module" src={~p"/assets/app.js"}>
+    </script>
+  </head>
+  <body>
+    <div
+      id="brand-launch"
+      class="launch-screen"
+      role="status"
+      aria-live="polite"
+      aria-label="Loading Robinah’s Shop"
+    >
+      <div class="launch-content">
+        <img
+          src={~p"/brand/robinahs-original.jpg"}
+          alt="Robinah’s Shop logo"
+          class="launch-logo"
+        />
+        <h1 class="launch-title">ROBINAH’S SHOP</h1>
+        <p class="launch-subtitle">Shop &amp; General Merchandise</p>
+        <div class="launch-spinner" aria-hidden="true"></div>
+      </div>
+    </div>
+    {@inner_content}
+  </body>
+</html>

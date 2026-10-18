@@ -1,0 +1,55 @@
+name: robinahs-shop
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-robinah}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-robinah_db}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-robinah} -d $${POSTGRES_DB:-robinah_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+  app:
+    build: .
+    image: robinahs-shop:local
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 30s
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${APP_PORT:-4100}:4000"
+    environment:
+      PHX_SERVER: "true"
+      PHX_HOST: ${PHX_HOST:?Set PHX_HOST in .env}
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:-${SECRET_BASE_KEY:?Set SECRET_BASE_KEY or SECRET_KEY_BASE in .env}}
+      SECRET_BASE_KEY: ${SECRET_BASE_KEY:-}
+      JWT_SECRET: ${JWT_SECRET:-}
+      LIVE_SIGNING_SALT: ${LIVE_SIGNING_SALT:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?Set ADMIN_EMAIL in .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+      POSTGRES_USER: ${POSTGRES_USER:-robinah}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-robinah_db}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-robinah}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-robinah_db}?ssl=false
+      POOL_SIZE: "10"
+      ERL_FLAGS: "+S 2:2"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+volumes:
+  db_data:

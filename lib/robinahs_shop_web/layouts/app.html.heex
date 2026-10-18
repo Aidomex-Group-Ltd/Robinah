@@ -1,0 +1,22 @@
+<div
+  id="connection-status"
+  class="connection-banner"
+  role="status"
+  phx-connected={Phoenix.LiveView.JS.hide()}
+  phx-disconnected={Phoenix.LiveView.JS.show()}
+>
+  Connection lost. Reconnecting… Sales and stock changes need server confirmation.
+</div>
+<div
+  :for={kind <- [:info, :error]}
+  :if={Phoenix.Flash.get(@flash, kind)}
+  class={"notice #{kind}"}
+  role="status"
+>
+  {Phoenix.Flash.get(@flash, kind)}<button
+    phx-click="lv:clear-flash"
+    phx-value-key={kind}
+    aria-label="Dismiss notice"
+  >×</button>
+</div>
+{@inner_content}

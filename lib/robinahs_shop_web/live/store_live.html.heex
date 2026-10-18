@@ -1,0 +1,278 @@
+<div class="site-shell">
+  <div class="topline">
+    <span>KORANORYA, MBARARA · OPPOSITE PREMIER BET</span><span class="status"><i class="dot"></i>Shop catalogue</span>
+  </div>
+  <header class="header">
+    <a class="brand" href={~p"/"}><img
+      src={~p"/resources/robinahs-logo.png"}
+      alt="Robinah’s Shop and General Merchandise logo"
+    /><span class="brand-fallback"><b>ROBINAH’S</b><small>SHOP &amp; GENERAL MERCHANDISE</small></span></a>
+    <nav class={if @menu_open, do: "nav open", else: "nav"} aria-label="Main navigation">
+      <a href={~p"/"}>Shop</a><a href="#collections">Collections</a><a href="#story">Our shop</a><a href="#visit">Visit us</a>
+      <a class="nav-staff" href={~p"/staff/pos"}>Staff POS <.icon name="arrow" size={15} /></a>
+    </nav>
+    <div class="header-actions">
+      <button
+        class="basket-button"
+        phx-click="basket"
+        aria-label="Toggle enquiry basket"
+        aria-expanded={to_string(@basket_open)}
+      ><.icon name="bag" /><span>Enquiry</span><b>{Enum.sum(Map.values(@cart))}</b></button><button
+        class="menu-toggle"
+        phx-click="menu"
+        aria-label="Toggle navigation"
+        aria-expanded={to_string(@menu_open)}
+      ><.icon name={if @menu_open, do: "close", else: "menu"} /></button>
+    </div>
+  </header>
+  <main id="home">
+    <section class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow"><span></span> YOUR NEIGHBOURHOOD GENERAL MERCHANDISE SHOP</span>
+        <h1>Good things for<br /><em>everyday living.</em></h1>
+        <p>
+          Thoughtful finds for your home, your travels, your family and the school year. Visit us in Koranorya, Mbarara.
+        </p>
+        <div class="hero-actions">
+          <a class="button-primary" href="#collections">Explore collections <.icon name="arrow" /></a><a
+            class="button-secondary"
+            href={whatsapp()}
+            target="_blank"
+            rel="noopener noreferrer"
+          ><.icon name="chat" /> Ask on WhatsApp</a>
+        </div>
+        <div class="hero-foot">
+          <.icon name="lock" /><span>Local shop. Personal enquiries. Confirm details directly with us.</span>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <img
+          src={~p"/resources/robinahs-shop-photo.jpg"}
+          alt="Robinah’s Shop and General Merchandise in Koranorya"
+        /><div class="image-note">
+          <span>THE EVERYDAY EDIT</span><b>Useful finds, made simple.</b>
+        </div><div class="floating-mark">R<span>’</span>S</div>
+      </div>
+    </section>
+    <section class="trust-strip">
+      <div>
+        <span class="trust-icon"><.icon name="pin" /></span><p>
+          <b>Find us in Mbarara</b><small>Koranorya, opposite Premier Bet</small>
+        </p>
+      </div>
+      <div>
+        <span class="trust-icon"><.icon name="chat" /></span><p>
+          <b>Ask before you visit</b><small>Enquire directly on WhatsApp</small>
+        </p>
+      </div>
+      <div>
+        <span class="trust-icon"><.icon name="box" /></span><p>
+          <b>Everyday essentials</b><small>Browse our product collections</small>
+        </p>
+      </div>
+    </section>
+    <section id="collections" class="section collections-section">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">BROWSE BY NEED</span><h2>Explore the collections</h2>
+        </div><p>
+          Find your next useful thing. Product images illustrate categories and are not a guarantee of current stock.
+        </p>
+      </div>
+      <div class="collection-grid">
+        <button
+          :for={{category, index} <- Enum.with_index(@categories)}
+          class="collection-card"
+          phx-click="category"
+          phx-value-name={category}
+        >
+          <div class={"collection-image collection-#{index}"}>
+            <img src={"/resources/" <> collection_image(index)} alt="" loading="lazy" /><span>0{index +
+              1}</span>
+          </div><div class="collection-title"><b>{category}</b><.icon name="arrow" /></div>
+        </button>
+      </div>
+    </section>
+    <section id="catalogue" class="section catalogue-section">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">THE SHOP DIRECTORY</span><h2>Browse the catalogue</h2>
+        </div><form
+          id="catalogue-search"
+          class="search-box"
+          phx-change="search"
+          phx-submit="search"
+        >
+          <.icon name="search" /><input
+            name="q"
+            value={@q}
+            aria-label="Search products"
+            placeholder="Search products or SKU…"
+            phx-debounce="200"
+            maxlength="100"
+          />
+        </form>
+      </div>
+      <div class="filters">
+        <button
+          :for={category <- ["All items" | @categories]}
+          class={if category == @category, do: "filter active", else: "filter"}
+          phx-click="category"
+          phx-value-name={category}
+          aria-pressed={to_string(category == @category)}
+        >{category}</button>
+      </div>
+      <div class="product-grid" id="catalogue-products">
+        <article
+          :for={product <- visible_products(@products, @category, @q)}
+          class="product-card"
+          id={"product-#{product.id}"}
+        >
+          <div class="product-photo">
+            <img src={product.image} alt={product.name} loading="lazy" /><span class="sample-tag">CATEGORY IMAGE</span><button
+              aria-label={"Add #{product.name} to enquiry"}
+              class="add-product"
+              phx-click="add"
+              phx-value-id={product.id}
+            ><.icon name="plus" /></button>
+          </div>
+          <div class="product-meta">
+            <span>{product.category}</span><small>{product.sku}</small>
+          </div><h3>{product.name}</h3><div class="product-bottom">
+            <span class="price-unset">Ask for current price</span><button
+              phx-click="add"
+              phx-value-id={product.id}
+            >Add to enquiry</button>
+          </div>
+        </article>
+      </div>
+      <p :if={visible_products(@products, @category, @q) == []} class="empty-state">
+        No catalogue items match that search. Try another term or ask us on WhatsApp.
+      </p>
+      <p class="catalogue-note">
+        Illustrative category listings only. Current product names, prices and availability must be confirmed with the shop.
+      </p>
+    </section>
+    <section id="story" class="story-section">
+      <div class="story-photo">
+        <img
+          src={~p"/resources/robinahs-shop-photo.jpg"}
+          alt="Photograph of Robinah’s Shop"
+          loading="lazy"
+        /><span class="photo-caption">A local business in Koranorya</span>
+      </div>
+      <div class="story-copy">
+        <span class="eyebrow">YOUR LOCAL SHOP</span><h2>Little things that make a day easier.</h2><p>
+          Robinah’s Shop and General Merchandise serves the everyday needs of households, families and students in the Mbarara community.
+        </p><p>
+          Have something specific in mind? Send us an enquiry and we’ll help you check what’s available before you make the trip.
+        </p><a
+          class="text-link"
+          href={whatsapp("Hello Robinah’s Shop, I’d like to ask about your available products.")}
+          target="_blank"
+          rel="noopener noreferrer"
+        >Talk to the shop <.icon name="arrow" /></a>
+      </div>
+    </section>
+    <section id="visit" class="visit-section">
+      <div class="visit-copy">
+        <span class="eyebrow">COME SAY HELLO</span><h2>We’re in Koranorya.</h2><p>
+          Find Robinah’s Shop and General Merchandise opposite Premier Bet, Mbarara, Uganda.
+        </p>
+        <div class="visit-detail">
+          <.icon name="pin" /><div>
+            <b>Shop location</b><span>Koranorya, Mbarara, opposite Premier Bet, Uganda</span>
+          </div>
+        </div>
+        <div class="visit-detail">
+          <.icon name="phone" /><div>
+            <b>Call the shop</b><a href="tel:+256774843183">+256 774 843 183</a>
+          </div>
+        </div>
+        <div class="visit-actions">
+          <a
+            class="button-primary"
+            target="_blank"
+            rel="noopener noreferrer"
+            href="https://www.google.com/maps/dir/?api=1&destination=Koranorya%2C%20Mbarara%2C%20opposite%20Premier%20Bet%2C%20Uganda"
+          >Get directions <.icon name="arrow" /></a><a
+            class="button-secondary"
+            target="_blank"
+            rel="noopener noreferrer"
+            href="https://www.google.com/maps/search/?api=1&query=Koranorya%2C%20Mbarara%2C%20opposite%20Premier%20Bet%2C%20Uganda"
+          >Open map</a>
+        </div>
+      </div>
+      <div class="map-frame">
+        <iframe
+          title="Map search for Koranorya, Mbarara, opposite Premier Bet"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          src="https://maps.google.com/maps?q=Koranorya%2C%20Mbarara%2C%20opposite%20Premier%20Bet%2C%20Uganda&output=embed"
+        ></iframe><a
+          target="_blank"
+          rel="noopener noreferrer"
+          href="https://www.google.com/maps/search/?api=1&query=Koranorya%2C%20Mbarara%2C%20opposite%20Premier%20Bet%2C%20Uganda"
+        >Open in Google Maps ↗</a><small>Address-based map search; exact business pin not independently verified.</small>
+      </div>
+    </section>
+  </main>
+  <footer class="footer">
+    <div class="footer-brand">
+      <b>ROBINAH’S</b><span>SHOP &amp; GENERAL MERCHANDISE</span><p>
+        Useful finds for everyday living.
+      </p>
+    </div><div>
+      <b>Visit</b><span>Koranorya, Mbarara</span><span>Opposite Premier Bet, Uganda</span>
+    </div><div>
+      <b>Contact</b><a href="tel:+256774843183">+256 774 843 183</a><a
+        href={whatsapp()}
+        target="_blank"
+        rel="noopener noreferrer"
+      >WhatsApp us</a>
+    </div><div class="footer-end">
+      © {Date.utc_today().year} Robinah’s Shop and General Merchandise.
+    </div>
+  </footer>
+  <aside
+    :if={@basket_open}
+    class="basket-drawer"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Your enquiry"
+  >
+    <div class="drawer-head">
+      <h3>Your enquiry</h3><button phx-click="basket" aria-label="Close enquiry"><.icon name="close" /></button>
+    </div>
+    <div :for={product <- cart_items(@products, @cart)} class="basket-line">
+      <div><b>{product.name}</b><small>{product.sku} · Price to be confirmed</small></div><div class="quantity">
+        <button
+          phx-click="minus"
+          phx-value-id={product.id}
+          aria-label={"Decrease #{product.name}"}
+        >−</button><b>{@cart[to_string(product.id)]}</b><button
+          phx-click="add"
+          phx-value-id={product.id}
+          aria-label={"Increase #{product.name}"}
+        >+</button>
+      </div>
+    </div>
+    <p :if={cart_items(@products, @cart) == []}>
+      Your enquiry basket is empty. Add items from the catalogue.
+    </p>
+    <a
+      :if={cart_items(@products, @cart) != []}
+      class="button-primary full"
+      href={enquiry_url(@products, @cart)}
+      target="_blank"
+      rel="noopener noreferrer"
+    ><.icon name="chat" /> Send enquiry on WhatsApp</a><small>WhatsApp opens a message for you to send. The shop must confirm prices and arrangements.</small>
+  </aside>
+  <a
+    class="whatsapp-float"
+    href={whatsapp()}
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="Enquire on WhatsApp"
+  ><.icon name="chat" size={24} /></a>
+</div>

@@ -1,0 +1,45 @@
+Generated using the built-in image generation tool.
+
+MOBILE POS
+Use case: ui-mockup.
+Create the MOBILE PHONE version of the desktop Robinah's Shop POS mockup in Image 1, with the official logo in Image 2 as the exact brand authority. A single high fidelity flat mobile app screenshot, portrait 9:19.5 aspect ratio, roughly 1080 by 2340 composition, edge-to-edge UI, NO outer phone hardware frame, no desktop sidebar, no perspective, no caption outside the screen. Optimise everything for a narrow 390px-wide phone viewport; thumb-friendly buttons, readable type, proper spacing, no tiny desktop text.
+
+Brand and appearance: official full square Robinah's Shop artwork from Image 2 used intact in a small clear logo badge in the top app header. Rich royal blue #0737B8 and navy #061C64, orange #FF9B00 and gold #FFC126 actions with navy text, cyan #00CDEE selected-state accents, ivory and white surfaces. Premium Ugandan neighbourhood merchandise with subtle woven-basket texture, warm wood and authentic ordinary household items. No imported luxury appliances, no replacement logo.
+Show a restrained phone status bar at the top, a compact royal-blue app header with logo, "ROBINAH'S SHOP" and small "Mbarara · UGX", a small basket icon with 3 badge.
+Then title "Point of sale", a compact orange "Receive stock" button and search "Search items or scan barcode". Horizontally scrolling category chips, "All items" active, "Home & kitchen", "Bedding", "Toiletries".
+A short tasteful photographic strip of ordinary Ugandan merchandise: colourful buckets, numbered cups, simple cooking pot, woven basket; headline "Everyday essentials".
+Below, a TWO COLUMN product card grid adapted for mobile. Keep crisp realistic product photos. Show these FOUR products with accurate text:
+"Nomi buckets" / "Listed qty 2" / "Listed UGX 8,000"
+"Cup with numbers" / "Listed qty 1" / "Listed UGX 1,000"
+"Steel bottle (Medium)" / "Listed qty 2" / "Listed UGX 20,000"
+"Blue soap" / "Listed qty 3 bars" / "Listed UGX 10,500".
+An orange circular plus on each card. A small "View all 36 entries" text action below the grid.
+Below the products, a compact checkout card integrated into the single mobile column, title "Current sale · 3 items" and "Draft". Three compact cart rows Nomi buckets, Cup with numbers, Blue soap, each quantity 1 with minus/plus controls and the unit price field "Confirm". Payment buttons "Cash", "Mobile money", "Card". Total "UGX —". Primary orange action "Confirm prices to checkout". Small amber note "Confirm unit prices and available stock." Do not invent a subtotal, actual sale or verified prices. It is okay for the content to represent a slightly long scrolling mobile app capture, but everything must stay in the portrait composition and read comfortably.
+Fixed bottom navigation, dark blue, five evenly spaced icons with labels "Shop", "POS" active with cyan or orange accent, "Inventory", "Reports", "More". Keep the bottom safe area.
+Preserve the desktop design language, locally Ugandan product imagery, logo and exact listed numbers. This must look like professionally designed real mobile software, not a scaled-down desktop screenshot. No duplicated side navigation, no overlapping panels, no text outside phone UI.
+
+MOBILE INVENTORY
+Use case: ui-mockup.
+Create the MOBILE PHONE version of the 36-entry Robinah's Shop inventory and price review desktop mockup in Image 1. The official logo in Image 2 is the brand authority. A single high fidelity flat mobile app screenshot, portrait 9:19.5 (roughly 1080 by 2340), no phone hardware frame, no perspective, no desktop sidebar, no caption outside the screen. Narrow 390px mobile viewport design with legible font sizes and generous touch controls. Match the mobile POS aesthetic: royal blue #0737B8, navy #061C64, orange #FF9B00, gold #FFC126, cyan #00CDEE accents, warm ivory and white surfaces. Place the supplied official full square logo intact as a recognisable badge in the compact royal-blue top app header; preserve natural aspect ratio and logo words. Subtle Ugandan woven-basket accent only in a small corner, not behind data.
+
+Screen structure:
+Phone status bar; compact blue brand header with official logo, "ROBINAH'S SHOP", small "Mbarara · UGX", hamburger or account icon.
+Main title "Inventory & prices".
+Two clear action buttons "Receive stock" (orange, navy text, plus icon) and "Export CSV" (outlined blue).
+Search "Search 36 listed entries".
+Compact pills "36 entries", "UGX", "Review required".
+Small readable amber message: "Listed quantities and amounts. Confirm available stock and unit prices."
+The inventory uses a MOBILE table/list with three columns: "Item / listed qty", "Listed UGX", "Unit UGX". Each item cell contains row number, name on first line and quantity on second line. Do not squeeze in the full desktop table. Show exactly the FIRST NINE entries of 36, accurately:
+01 Cup with numbers / Listed qty 1 / Listed UGX 1,000 / Unit UGX Confirm
+02 Toilet paper / Listed qty 4 / Listed UGX 2,000 / Unit UGX Confirm
+03 Colgate Herbal (M) / Listed qty 2 / Listed UGX 8,000 / Unit UGX Confirm
+04 Nomi buckets / Listed qty 2 / Listed UGX 8,000 / Unit UGX Confirm
+05 Dry cell / Listed qty 1 pair / Listed UGX 2,000 / Unit UGX Confirm
+06 Torch / Listed qty 1 / Listed UGX 2,000 / Unit UGX Confirm
+07 Lato milk sachets / Listed qty 2 / Listed UGX 1,000 / Unit UGX Confirm
+08 Ruler / Listed qty 1 / Listed UGX 1,000 / Unit UGX Confirm
+09 Black book (1½ Quire) / Listed qty 2 / Listed UGX 8,000 / Unit UGX Confirm.
+All nine unit-price cells show "Confirm", absolutely no calculated prices. Use neat thin row dividers, subtle alternating pale blue/ivory surfaces, comfortable two-line item cells. Exact source numbers, no duplicated or omitted rows in this page.
+Below the table, readable "Rows 1–9 of 36", pagination four page chips "1" selected, "2", "3", "4" and a Next arrow. This represents page 1 of 4, not a claim to show the whole source list on one phone screen. Small note "Unclear names and the Vaseline amount need review."
+Fixed bottom navigation dark blue with five icons and labels "Shop", "POS", "Inventory" active cyan accent, "Reports", "More"; safe area at bottom.
+Premium professional retail software, ample whitespace balanced with readable information. Use the exact source data, no invented stock availability, no fake sales metrics or totals, no currency conversions. Keep item labels and all numbers crisp. Single cohesive mobile inventory screen.

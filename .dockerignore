@@ -1,0 +1,11 @@
+_build
+deps
+.git
+.env
+*.db*
+data
+backups
+reference
+test
+work
+*.zip

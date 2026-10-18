@@ -1,0 +1,58 @@
+[
+  {
+    "file": "robinahs-logo.png",
+    "url": "https://robinah-s-shop-qlr4ne.v2.appdeploy.ai/resources/robinahs-logo.png",
+    "bytes": 82023,
+    "content_type": "image/png",
+    "sha256": "6e89d491c26c54116f6190455729926d3cf59597e0c32882f264b8acea804ac3"
+  },
+  {
+    "file": "robinahs-shop-photo.jpg",
+    "url": "https://robinah-s-shop-qlr4ne.v2.appdeploy.ai/resources/robinahs-shop-photo.jpg",
+    "bytes": 138046,
+    "content_type": "image/jpeg",
+    "sha256": "705437257bcd66c36b335cc893bfbbd5d32afae9e6e88684404428b26306ce3d"
+  },
+  {
+    "file": "kitchen-essentials.jpg",
+    "url": "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=900&q=80",
+    "bytes": 99008,
+    "content_type": "image/jpeg",
+    "sha256": "2952e278b199cb92b1b23bb3115e54bd5c2694d707b057d58b616c950064341c"
+  },
+  {
+    "file": "travel-everyday-bags.jpg",
+    "url": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=900&q=80",
+    "bytes": 88777,
+    "content_type": "image/jpeg",
+    "sha256": "42d14e0c648abcbc8faf2e699569b380dc8b070ecc38fab8b4417a5acd7be098"
+  },
+  {
+    "file": "bedding-comfort.jpg",
+    "url": "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=900&q=80",
+    "bytes": 80076,
+    "content_type": "image/jpeg",
+    "sha256": "a8119e9a84f4eeddf95e74f46b043b1c7ebdb768875a724eac7edbe2ae20feab"
+  },
+  {
+    "file": "household-storage.jpg",
+    "url": "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=900&q=80",
+    "bytes": 86739,
+    "content_type": "image/jpeg",
+    "sha256": "432b25eadad04371e50d40699479e9ca90ae35059b0322885d551af9593f086e"
+  },
+  {
+    "file": "school-essentials.jpg",
+    "url": "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=900&q=80",
+    "bytes": 51724,
+    "content_type": "image/jpeg",
+    "sha256": "ba9d30a61cc4217f7ec9be07c788ab0cce49ddf2a66505f9081d6185417e24a3"
+  },
+  {
+    "file": "home-organisation.jpg",
+    "url": "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&w=900&q=80",
+    "bytes": 235152,
+    "content_type": "image/jpeg",
+    "sha256": "1f71e9ef55c1a4c0936f201f7e7fd8529f4c64d08a22b0cc89c655cd3a223bfd"
+  }
+]

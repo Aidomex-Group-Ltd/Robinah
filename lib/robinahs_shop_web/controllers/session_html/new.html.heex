@@ -1,0 +1,32 @@
+<div class="staff-shell">
+  <a href="/" class="text-link">← Back to the shop</a>
+  <div class="sign-card">
+    <div class="sign-icon"><.icon name="lock" size={26} /></div>
+    <h1>Staff sign-in</h1>
+    <p>
+      Sign in with your authorised staff account to access sales and inventory tools. Customer browsing remains public.
+    </p>
+    <p :if={Phoenix.Flash.get(@flash, :error)} class="notice" role="alert">
+      {Phoenix.Flash.get(@flash, :error)}
+    </p>
+    <.form for={%{}} as={:login} action={~p"/staff/sign-in"} class="login-form">
+      <label>Email<input
+        type="email"
+        name="login[email]"
+        autocomplete="username"
+        required
+        maxlength="254"
+      /></label>
+      <label>Password<input
+        type="password"
+        name="login[password]"
+        autocomplete="current-password"
+        required
+        maxlength="128"
+      /></label>
+      <button class="button-primary full" type="submit" phx-disable-with="Signing in…">Sign in securely
+      <.icon name="arrow" /></button>
+    </.form>
+    <small>Access is subject to server-side staff authorisation. Contact the owner for an account.</small>
+  </div>
+</div>

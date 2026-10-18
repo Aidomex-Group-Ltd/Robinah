@@ -1,0 +1,354 @@
+{
+  "files": [
+    {
+      "path": ".dockerignore",
+      "bytes": 78,
+      "sha256": "728eef24dbaa8504a7b3709de79c7771edc4aa8cc4b0b740c851088c96c74a0d"
+    },
+    {
+      "path": ".env.example",
+      "bytes": 198,
+      "sha256": "28978d85ef544c6a26926290feff633f45928a39a9ea6215b31c835729d7b02c"
+    },
+    {
+      "path": ".formatter.exs",
+      "bytes": 276,
+      "sha256": "39ab42c4716524e39f9876cdc62aef4f5a2b72b35c23ffe0a4eb012323eaff92"
+    },
+    {
+      "path": ".gitattributes",
+      "bytes": 45,
+      "sha256": "93699a1108fd9da226b06f84ee12e317f4ea4d2f18a8fd05260443fd1bf2faef"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 129,
+      "sha256": "ed6404c706eef23fcb474863503490fe40b73c98711c759577693bccab2efe5c"
+    },
+    {
+      "path": "Dockerfile",
+      "bytes": 1410,
+      "sha256": "2e19e1442b73a4587b8d4a4ce43e3c9079bc231a622ccea965238538f92b9952"
+    },
+    {
+      "path": "PROVENANCE.md",
+      "bytes": 1633,
+      "sha256": "1279cc42301f17652f36ea64c28d6034bedd410315ab1684f68d0e07d596f9f7"
+    },
+    {
+      "path": "README.md",
+      "bytes": 7341,
+      "sha256": "d25d69f3c669f7e5ab60ec22e200328a802f3b3e74131425eac9eaa13f2a17e4"
+    },
+    {
+      "path": "VALIDATION.md",
+      "bytes": 2201,
+      "sha256": "85f469e3be10be46bca037c7846ca7e11f78020de1066ee5445d9537931e3df6"
+    },
+    {
+      "path": "assets/css/app.css",
+      "bytes": 22214,
+      "sha256": "8f33b0d5a35f9d18ae378ceea932dfc3b94f399aeb8e5f5955f02129cb92f97f"
+    },
+    {
+      "path": "assets/js/app.js",
+      "bytes": 676,
+      "sha256": "f0d9ef1ba6a4a0b04a40621b44cda396f603d718a93a04772618c5ad5bccdf4a"
+    },
+    {
+      "path": "compose.edge.yml",
+      "bytes": 493,
+      "sha256": "ff1b2a05ec74da9ce770db50b1ef4a1b24fd4daa446a5324d478e35dcde704e1"
+    },
+    {
+      "path": "compose.yml",
+      "bytes": 722,
+      "sha256": "a9fe6f9037cc6e2310233a7ceee929044fe2fe2514e6138727b589da8b0f4204"
+    },
+    {
+      "path": "config/config.exs",
+      "bytes": 910,
+      "sha256": "9094176902ae40beb1ece9c470719d934049b3fabfaa5c283d4d425717986ba8"
+    },
+    {
+      "path": "config/dev.exs",
+      "bytes": 428,
+      "sha256": "2af487b83d86941929dd76e1dafccb9bde411fb6d1dd48aa026c6abe04af9e7a"
+    },
+    {
+      "path": "config/prod.exs",
+      "bytes": 296,
+      "sha256": "61aeece6cba236533f51147086fb1624165c524cf406e7a4bdaa3f7fe5d33361"
+    },
+    {
+      "path": "config/runtime.exs",
+      "bytes": 651,
+      "sha256": "e0dff182e6e382b146bff569011945b4d4d4d6bd621b763681971173dba37688"
+    },
+    {
+      "path": "config/test.exs",
+      "bytes": 461,
+      "sha256": "5eba5ba5fd5c58951d6aeae598372e19c3d0cebb22f0b92ad16537e32cf28724"
+    },
+    {
+      "path": "deploy/Caddyfile",
+      "bytes": 68,
+      "sha256": "3d55f4967c67e0597d00439a2b002ef92ee2f371458905f304d0d29f97f7021f"
+    },
+    {
+      "path": "deploy/nginx.conf.example",
+      "bytes": 486,
+      "sha256": "3e206e3e3a54199ca4a11e13c95a7577d0ab4dff9f2a35506a5a205a80ac1a4f"
+    },
+    {
+      "path": "lib/robinahs_shop/accounts.ex",
+      "bytes": 4766,
+      "sha256": "d9dba3df156caa0ac5f340b7fe45b9f09878a8962153b6398ac871b9cca2efe7"
+    },
+    {
+      "path": "lib/robinahs_shop/application.ex",
+      "bytes": 462,
+      "sha256": "e5f28ed6d72c608c412e1c0ead97b3497a71886015a2d9965da2f37b5f5c44c6"
+    },
+    {
+      "path": "lib/robinahs_shop/login_limiter.ex",
+      "bytes": 756,
+      "sha256": "00b53ec123bdbfc15ccaac67ade178d886a2bf33fd08cf214c4f6b776a132de4"
+    },
+    {
+      "path": "lib/robinahs_shop/release.ex",
+      "bytes": 1457,
+      "sha256": "0c9633fbd1a8effbba50e50811de436e0b10975b456774c268931c61f44fe071"
+    },
+    {
+      "path": "lib/robinahs_shop/repo.ex",
+      "bytes": 108,
+      "sha256": "64899c928aa0a93bf70c1298dc0178d69ac99e21bee6bce2f4b316c6dfc83b65"
+    },
+    {
+      "path": "lib/robinahs_shop/schemas.ex",
+      "bytes": 3377,
+      "sha256": "d340c781803f270c886811103e1658a6cf03004aeaaa82590ff839cbbffbabbc"
+    },
+    {
+      "path": "lib/robinahs_shop/shop.ex",
+      "bytes": 13210,
+      "sha256": "a773ba0752998d85f0b019ca289c715fa826afdb08a099cc4e87e95f4bdec562"
+    },
+    {
+      "path": "lib/robinahs_shop_web.ex",
+      "bytes": 956,
+      "sha256": "3518f5d136e2674343304217efd6fac27b591c166306fe46653681caf007650c"
+    },
+    {
+      "path": "lib/robinahs_shop_web/auth.ex",
+      "bytes": 1405,
+      "sha256": "0e8c032eb0f48e9e43e1e84800ee23a96bebd851acaa1721feac013d8f51e442"
+    },
+    {
+      "path": "lib/robinahs_shop_web/components.ex",
+      "bytes": 1759,
+      "sha256": "98c26f2c1072848332913190ed71159e8c588f35cc2295fd343bab5a14209655"
+    },
+    {
+      "path": "lib/robinahs_shop_web/controllers/report_controller.ex",
+      "bytes": 982,
+      "sha256": "5eedd1fe87d0669fb89ba1ec89162ec844623d78b0b5cef7a52d1a5a9a14d9d5"
+    },
+    {
+      "path": "lib/robinahs_shop_web/controllers/session_controller.ex",
+      "bytes": 1501,
+      "sha256": "d4537f3db4693dcd0b29af1bc137dc6261ba3c4be544a5106f40d7d153416808"
+    },
+    {
+      "path": "lib/robinahs_shop_web/controllers/session_html/new.html.heex",
+      "bytes": 1171,
+      "sha256": "5596446b839401a4b4ed89dcf0617f0d6fbb8f515c63ad5ed66ba834481cda86"
+    },
+    {
+      "path": "lib/robinahs_shop_web/endpoint.ex",
+      "bytes": 974,
+      "sha256": "2eaac823b966fcc52b948f0d3ed342b73ed5fa73f8aaac70d15a4735079820c6"
+    },
+    {
+      "path": "lib/robinahs_shop_web/error_html.ex",
+      "bytes": 320,
+      "sha256": "18185a4efb739069b90341d3447fafe9bc723501be48a184e5b7255fe76b3ab7"
+    },
+    {
+      "path": "lib/robinahs_shop_web/layouts.ex",
+      "bytes": 100,
+      "sha256": "89da80c54ddaa50dcd7b4a464673b5e233091e34ada27e6b2228cfdc73091d66"
+    },
+    {
+      "path": "lib/robinahs_shop_web/layouts/app.html.heex",
+      "bytes": 554,
+      "sha256": "94bd79c0861588e6c554e7ca9c00aa4f467df65723fece5258aa1d9889957ffa"
+    },
+    {
+      "path": "lib/robinahs_shop_web/layouts/root.html.heex",
+      "bytes": 801,
+      "sha256": "d1e683ddd8bf47d7949763ea43d0b338617a08b11f20b69c645be6a5a16cc6aa"
+    },
+    {
+      "path": "lib/robinahs_shop_web/live/staff_live.ex",
+      "bytes": 9246,
+      "sha256": "ae5b3ba6aa40b2f08c2ec9c85b308283db9b5197ffad05746d7ffaff80f7299d"
+    },
+    {
+      "path": "lib/robinahs_shop_web/live/staff_live.html.heex",
+      "bytes": 16909,
+      "sha256": "804100d7392b0d3b298c4a2ff4e961f92d8831319a878718965e9e743c4a56b8"
+    },
+    {
+      "path": "lib/robinahs_shop_web/live/store_live.ex",
+      "bytes": 2792,
+      "sha256": "77037c0c74c429a795bae26481181d88ee93bf497d7e08ed53fe29041c3efd66"
+    },
+    {
+      "path": "lib/robinahs_shop_web/live/store_live.html.heex",
+      "bytes": 11541,
+      "sha256": "60844d5e1d8ddf6fa77d7363ec428ff20da107fb5802f32207b948051c84c724"
+    },
+    {
+      "path": "lib/robinahs_shop_web/router.ex",
+      "bytes": 1072,
+      "sha256": "2c687577ff3c61cea4aac3c61f053a66922715cab8172ffe1df6fd12c3fe73a8"
+    },
+    {
+      "path": "mix.exs",
+      "bytes": 1784,
+      "sha256": "f2542d0389762338268bb579563dd4a50f98a9b95df87ddc088bb7dc3f59b5e4"
+    },
+    {
+      "path": "mix.lock",
+      "bytes": 10234,
+      "sha256": "e8d27f87ddbccb88302e6a20f32e7879463daaca4fb9e9ef82c32439caf91c65"
+    },
+    {
+      "path": "priv/repo/migrations/20261018000100_create_shop.exs",
+      "bytes": 2921,
+      "sha256": "d75e1e60ae97398102246a1422e94661682bfeb0cb6a9aabbd6a3f9d078f61f4"
+    },
+    {
+      "path": "priv/repo/seeds.exs",
+      "bytes": 552,
+      "sha256": "45c7f079cea946d7addb8311212e023315c12590d7326ae74e42f72552fb80ab"
+    },
+    {
+      "path": "priv/static/favicon.svg",
+      "bytes": 220,
+      "sha256": "63f3f9bfcaaf6155e12bc4a9e3f9b41f294bf99e166506b049144354949af4d6"
+    },
+    {
+      "path": "priv/static/resources/bedding-comfort.jpg",
+      "bytes": 80076,
+      "sha256": "a8119e9a84f4eeddf95e74f46b043b1c7ebdb768875a724eac7edbe2ae20feab"
+    },
+    {
+      "path": "priv/static/resources/home-organisation.jpg",
+      "bytes": 235152,
+      "sha256": "1f71e9ef55c1a4c0936f201f7e7fd8529f4c64d08a22b0cc89c655cd3a223bfd"
+    },
+    {
+      "path": "priv/static/resources/household-storage.jpg",
+      "bytes": 86739,
+      "sha256": "432b25eadad04371e50d40699479e9ca90ae35059b0322885d551af9593f086e"
+    },
+    {
+      "path": "priv/static/resources/kitchen-essentials.jpg",
+      "bytes": 99008,
+      "sha256": "2952e278b199cb92b1b23bb3115e54bd5c2694d707b057d58b616c950064341c"
+    },
+    {
+      "path": "priv/static/resources/robinahs-logo.png",
+      "bytes": 82023,
+      "sha256": "6e89d491c26c54116f6190455729926d3cf59597e0c32882f264b8acea804ac3"
+    },
+    {
+      "path": "priv/static/resources/robinahs-shop-photo.jpg",
+      "bytes": 138046,
+      "sha256": "705437257bcd66c36b335cc893bfbbd5d32afae9e6e88684404428b26306ce3d"
+    },
+    {
+      "path": "priv/static/resources/school-essentials.jpg",
+      "bytes": 51724,
+      "sha256": "ba9d30a61cc4217f7ec9be07c788ab0cce49ddf2a66505f9081d6185417e24a3"
+    },
+    {
+      "path": "priv/static/resources/travel-everyday-bags.jpg",
+      "bytes": 88777,
+      "sha256": "42d14e0c648abcbc8faf2e699569b380dc8b070ecc38fab8b4417a5acd7be098"
+    },
+    {
+      "path": "priv/static/robots.txt",
+      "bytes": 41,
+      "sha256": "8e238f3e416c53b8ad9186136a4971783d2d8bc78359fb37647414460128fcf5"
+    },
+    {
+      "path": "reference/image-sources.json",
+      "bytes": 2328,
+      "sha256": "53722a1c405a0e060cdcd98a0a41c8b5e74d6cf3f2cbe850edacf32cc248abb8"
+    },
+    {
+      "path": "reference/original-stylesheet.css",
+      "bytes": 19799,
+      "sha256": "76b5326f4e8de412b4b0e15660852e3a8844371a253f899a6fddf643766f7540"
+    },
+    {
+      "path": "reference/public-browser-bundle.js",
+      "bytes": 327278,
+      "sha256": "b923aef721c209f98b9320918f1f42b6e467b70aeac0fdd596fce9d234b6e7e3"
+    },
+    {
+      "path": "scripts/backup.sh",
+      "bytes": 390,
+      "sha256": "ad856b2b037fe9f9693c4aae8a156acba9ce3b3cda509201fb22bd359e0cc8bf"
+    },
+    {
+      "path": "scripts/deploy.sh",
+      "bytes": 506,
+      "sha256": "d86d88df007785562378d1e3344f28287870795cb565d77c9dec2453e643e935"
+    },
+    {
+      "path": "scripts/docker-entrypoint.sh",
+      "bytes": 111,
+      "sha256": "c29e0c041b5b2f90736837333d48486a104ae8bc3120d9b065f8a0db628d2b64"
+    },
+    {
+      "path": "scripts/init-env.sh",
+      "bytes": 1082,
+      "sha256": "a9699d57af7d758a5d023f965dbb673806f1e9223d74b67cb1d99d33ecdf4d83"
+    },
+    {
+      "path": "test/robinahs_shop/accounts_test.exs",
+      "bytes": 1608,
+      "sha256": "4680b103d64dae8efb8a5707415df3d1bc97e00842d9b397318d42a993f745e9"
+    },
+    {
+      "path": "test/robinahs_shop/shop_test.exs",
+      "bytes": 4860,
+      "sha256": "dd51c51c00adec66e111040db2f905a9691c1363883a64fb0c4425ef2eeee1ea"
+    },
+    {
+      "path": "test/robinahs_shop_web/http_test.exs",
+      "bytes": 1433,
+      "sha256": "74e496b5c7ea34309faf894f67e99a4d890518b328a202701996394ecc382215"
+    },
+    {
+      "path": "test/robinahs_shop_web/live_flows_test.exs",
+      "bytes": 1823,
+      "sha256": "f7b1296fb0724834b84137127688ba81c4d6b333ce52dd817d25b2727e15e366"
+    },
+    {
+      "path": "test/support/data_case.ex",
+      "bytes": 1736,
+      "sha256": "fc93d6d854c9636e7ecd71fd6d5c9d0a6627e5b6d25cfc73f426d88d5043e712"
+    },
+    {
+      "path": "test/test_helper.exs",
+      "bytes": 74,
+      "sha256": "3c1687363aed8b2294b7b37bf98a638879179ec27b1670ff99e63b211b5ed102"
+    }
+  ]
+}

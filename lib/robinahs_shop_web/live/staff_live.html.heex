@@ -1,0 +1,941 @@
+<div class="site-shell">
+  <div class="topline">
+    <span>ROBINAH’S SHOP · STAFF WORKSPACE</span><a href={~p"/"}>← Public shop</a>
+  </div>
+  <main class="staff-shell">
+    <header class="brand-header">
+      <img
+        src={~p"/brand/robinahs-original.jpg"}
+        alt="Robinah’s Shop logo"
+        class="brand-logo"
+        width="52"
+        height="52"
+      />
+      <div class="brand-text">
+        <b>ROBINAH’S SHOP</b><span>Staff workspace · Mbarara · UGX</span>
+      </div>
+      <div class="brand-tools">
+        <button
+          :if={@live_action == :pos}
+          type="button"
+          class="basket-tool"
+          phx-click="review-basket"
+          aria-label={"Review current sale, #{cart_count(@cart)} items"}
+        >
+          <.icon name="bag" /><b>{cart_count(@cart)}</b>
+        </button>
+        <button type="button" class="tool-btn" phx-click="refresh" aria-label="Refresh data">
+          <.icon name="refresh" /><span class="tool-label">Refresh</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="staff-welcome">
+      <span><span class="online-pill"><i></i> Signed in</span> {@current_user.name} · {@current_user.role}</span><.form
+        for={%{}}
+        action={~p"/staff/sign-out"}
+        method="delete"
+      >
+        <button type="submit">Sign out</button>
+      </.form>
+    </div>
+
+    <nav class="staff-tabs" aria-label="Staff tools">
+      <.link
+        :if={@can_sale}
+        patch={~p"/staff/pos"}
+        class={if @live_action == :pos, do: "selected"}
+        aria-current={if @live_action == :pos, do: "page"}
+      >POS</.link>
+      <.link
+        :if={@can_receive}
+        patch={~p"/staff/receiving"}
+        class={if @live_action == :receiving, do: "selected"}
+        aria-current={if @live_action == :receiving, do: "page"}
+      >Inventory</.link>
+      <.link
+        :if={@can_manage}
+        patch={~p"/staff/products"}
+        class={if @live_action == :products, do: "selected"}
+        aria-current={if @live_action == :products, do: "page"}
+      >Products &amp; prices</.link>
+      <.link
+        :if={@can_report}
+        patch={~p"/staff/reports"}
+        class={if @live_action == :reports, do: "selected"}
+        aria-current={if @live_action == :reports, do: "page"}
+      >Reports</.link>
+      <.link
+        :if={@can_team}
+        patch={~p"/staff/team"}
+        class={if @live_action == :team, do: "selected"}
+        aria-current={if @live_action == :team, do: "page"}
+      >Staff</.link>
+    </nav>
+
+    <div :if={@live_action == :pos} class="pos-screen">
+      <div class="page-heading">
+        <div>
+          <span class="eyebrow">COUNTER</span><h1>Point of sale</h1><p>
+            Search by product name or SKU. Prices, totals and stock are confirmed on the server.
+          </p>
+        </div>
+        <div class="page-actions">
+          <a href={~p"/staff/receiving"} class="button-primary receive-btn">
+            <.icon name="plus" /> Receive stock
+          </a>
+        </div>
+      </div>
+
+      <div class="pos-layout mobile-optimized">
+        <section class="pos-products" aria-label="Products for sale">
+          <form
+            id="staff-product-search"
+            class="search-box pos-search"
+            phx-change="search"
+            phx-submit="search"
+          >
+            <.icon name="search" /><input
+              name="q"
+              value={@q}
+              placeholder="Search items or scan barcode"
+              aria-label="Search products by name or SKU"
+              phx-debounce="200"
+              maxlength="100"
+            />
+          </form>
+          <div class="category-chips" role="group" aria-label="Product categories">
+            <button
+              type="button"
+              class={if @category == "All items", do: "chip active", else: "chip"}
+              phx-click="category"
+              phx-value-name="All items"
+              aria-pressed={to_string(@category == "All items")}
+            >All items</button>
+            <button
+              :for={cat <- @categories}
+              type="button"
+              class={if @category == cat, do: "chip active", else: "chip"}
+              phx-click="category"
+              phx-value-name={cat}
+              aria-pressed={to_string(@category == cat)}
+            >{cat}</button>
+          </div>
+          <div class="products-grid two-column" id="pos-products">
+            <button
+              :for={p <- visible_products(@products, @category, @q)}
+              type="button"
+              class="product-card-pos"
+              phx-click="add"
+              phx-value-id={p.id}
+              aria-label={"Add #{p.name} to the sale"}
+            >
+              <div class="product-image">
+                <img src={p.image} alt="" loading="lazy" />
+              </div>
+              <div class="product-info">
+                <h3>{p.name}</h3><small class="product-sku">{p.sku}</small><.stock_badge product={
+                  p
+                } /><p class="listed-price">
+                  {if p.price > 0, do: money(p.price), else: "Confirm price"}
+                </p>
+              </div>
+              <span class="add-circle" aria-hidden="true"><.icon name="plus" /></span>
+            </button>
+          </div>
+          <p :if={visible_products(@products, @category, @q) == []} class="empty-state">
+            {if @products == [],
+              do:
+                "No products are configured yet. Add products in Products & prices, then receive stock.",
+              else: "No products match this search or category."}
+          </p>
+          <div class="view-all">
+            <button type="button" class="text-link" phx-click="show-all">
+              View all {length(@products)} entries
+            </button>
+          </div>
+          <p class="warning-copy">
+            Confirm unit prices and available stock before posting sales. All amounts are whole UGX.
+          </p>
+        </section>
+
+        <section class="pos-checkout mobile-checkout" id="sale-basket" aria-label="Current sale">
+          <div class="checkout-head">
+            <h2 class="checkout-title">Current sale · {cart_count(@cart)} items</h2>
+            <span class={if @cart == %{}, do: "draft-pill", else: "draft-pill ready"}>
+              {if @cart == %{}, do: "Draft", else: "Ready"}
+            </span>
+          </div>
+          <p :if={@cart == %{}} class="empty-state">Add products to begin a sale.</p>
+          <div class="basket-items">
+            <div :for={p <- basket(@products, @cart)} class="basket-row">
+              <div class="basket-info">
+                <b>{p.name}</b><small>
+                  {if p.price > 0,
+                    do: money(p.price) <> " / " <> p.unit,
+                    else: "Confirm price"}
+                </small>
+              </div>
+              <div class="basket-qty">
+                <button
+                  type="button"
+                  phx-click="minus"
+                  phx-value-id={p.id}
+                  aria-label={"Decrease #{p.name}"}
+                >−</button><span class="qty-value">{@cart[to_string(p.id)]}</span><button
+                  type="button"
+                  phx-click="add"
+                  phx-value-id={p.id}
+                  aria-label={"Increase #{p.name}"}
+                >+</button>
+              </div>
+              <button
+                type="button"
+                class="basket-remove"
+                phx-click="remove"
+                phx-value-id={p.id}
+                aria-label={"Remove #{p.name} from the sale"}
+              ><.icon name="close" size={16} /></button>
+            </div>
+          </div>
+          <div class="total-section">
+            <div class="total-line">
+              <span>Total</span><b>{money(total(@products, @cart))}</b>
+            </div>
+            <p class="total-note">Calculated on the server from confirmed unit prices.</p>
+          </div>
+          <.form for={@sale_form} id="sale-form" phx-change="sale-change" phx-submit="post-sale">
+            <div class="payment-buttons" role="group" aria-label="Payment method">
+              <button
+                :for={method <- Shop.payment_methods()}
+                type="button"
+                class={
+                  if @sale_form[:payment_method].value == method,
+                    do: "pay-btn active",
+                    else: "pay-btn"
+                }
+                phx-click="set-payment"
+                phx-value-method={method}
+                aria-pressed={to_string(@sale_form[:payment_method].value == method)}
+              >
+                {if method == "Cash",
+                  do: "Cash",
+                  else:
+                    if(String.starts_with?(method, "Manual"), do: "Mobile money", else: "Card")}
+              </button>
+            </div>
+            <input
+              type="hidden"
+              name="sale[payment_method]"
+              value={@sale_form[:payment_method].value}
+            />
+            <label :if={@sale_form[:payment_method].value == "Cash"} class="cash-input">
+              Cash received (UGX)
+              <input
+                type="number"
+                min="0"
+                step="1"
+                name="sale[cash_received]"
+                value={@sale_form[:cash_received].value}
+                required
+                inputmode="numeric"
+                placeholder="Enter amount received"
+              />
+            </label>
+            <button
+              class="button-primary full checkout-btn"
+              type="submit"
+              phx-disable-with="Posting sale…"
+              disabled={@cart == %{} or unconfirmed_prices?(@products, @cart)}
+            >
+              {if unconfirmed_prices?(@products, @cart),
+                do: "Confirm prices to checkout",
+                else: "Confirm & checkout"}
+            </button>
+          </.form>
+          <small class="checkout-note">
+            Confirm unit prices and available stock. Payment selections are manual records, not provider
+            verification.
+          </small>
+        </section>
+      </div>
+      <section :if={@receipt} class="receipt">
+        <h3>Robinah’s Shop · Receipt RS-{@receipt.id}</h3><p>
+          {local_time(@receipt.inserted_at)}
+        </p><ul>
+          <li :for={item <- @receipt.items}>
+            {item.name} × {item.quantity} — {money(item.quantity * item.unit_price)}
+          </li>
+        </ul><p><b>Total: {money(@receipt.total)}</b> · {@receipt.payment_method}</p><p :if={
+          @receipt.cash_received
+        }>
+          Cash received: {money(@receipt.cash_received)} · Change: {money(@receipt.change)}
+        </p><small>Manual payment record. +256 774 843 183 · Koranorya, Mbarara.</small><button
+          class="button-secondary"
+          phx-click="print"
+        >Print receipt</button>
+      </section>
+    </div>
+
+    <section :if={@live_action == :receiving} class="receiving-panel inventory-panel">
+      <div class="page-heading">
+        <div>
+          <span class="eyebrow">STOCK &amp; PRICES</span><h1>Inventory &amp; prices</h1><p>
+            {StockList.source_note()} Listed amounts are never divided by quantity to infer unit
+            prices.
+          </p>
+        </div>
+        <div class="page-actions">
+          <a href="#receive-form" class="button-primary">
+            <.icon name="plus" /> Receive stock
+          </a>
+          <a href={~p"/staff/inventory.csv"} class="button-secondary" download>
+            <.icon name="download" /> Export CSV
+          </a>
+        </div>
+      </div>
+
+      <div class="inventory-toolbar">
+        <form
+          id="inventory-search"
+          class="search-box"
+          phx-change="inventory-search"
+          phx-submit="inventory-search"
+        >
+          <.icon name="search" /><input
+            name="inv_q"
+            value={@inv_q}
+            placeholder={"Search #{@inventory.total} listed entries"}
+            aria-label="Search listed stock entries"
+            phx-debounce="200"
+            maxlength="100"
+          />
+        </form>
+        <div class="inventory-pills">
+          <span class="pill">{"#{@inventory.total} entries"}</span><span class="pill">UGX</span><span class={
+            if @inventory.review_required > 0, do: "pill pill-warn", else: "pill pill-ok"
+          }>
+            {if @inventory.review_required > 0,
+              do: "Review required: #{@inventory.review_required}",
+              else: "Review complete"}
+          </span>
+        </div>
+        <div class="inventory-filters" role="group" aria-label="Filter listed entries">
+          <button
+            :for={
+              filter <- [
+                {"all", "All entries"},
+                {"review", "Needs review"},
+                {"confirmed", "Confirmed"}
+              ]
+            }
+            type="button"
+            class={if @inv_filter == elem(filter, 0), do: "filter active", else: "filter"}
+            phx-click="inventory-filter"
+            phx-value-filter={elem(filter, 0)}
+            aria-pressed={to_string(@inv_filter == elem(filter, 0))}
+          >{elem(filter, 1)}</button>
+        </div>
+      </div>
+
+      <p class="warning-copy">
+        Listed quantities and amounts come from the handwritten stock note and are not verified
+        available stock or selling prices. Confirm them before use.
+      </p>
+
+      <div :if={@review_entry} class="review-panel" role="region" aria-label="Confirm unit price">
+        <div class="review-head">
+          <b>Entry {pad(@review_entry.number)} · {@review_entry.item}</b><button
+            type="button"
+            class="icon-btn"
+            phx-click="cancel-review"
+            aria-label="Cancel price review"
+          ><.icon name="close" /></button>
+        </div>
+        <dl class="review-facts">
+          <div>
+            <dt>Listed qty</dt><dd>{@review_entry.quantity_as_listed}</dd>
+          </div>
+          <div>
+            <dt>Listed UGX as written</dt><dd>{@review_entry.amount_as_written}</dd>
+          </div>
+        </dl>
+        <p class="warning-copy">
+          The listed amount is not a unit price. Type the confirmed unit price; nothing is calculated
+          from the document.
+        </p>
+        <.form for={@review_form} id="review-form" class="review-form" phx-submit="confirm-entry">
+          <input type="hidden" name="review[entry_id]" value={@review_entry.id} />
+          <label>Link product (optional)<select name="review[product_id]">
+            <option value="">No product link yet</option><option
+              :for={p <- @products}
+              value={p.id}
+              selected={@review_entry.product_id == p.id}
+            >
+              {p.sku} · {p.name}
+            </option>
+          </select></label>
+          <label>Confirmed unit price (UGX)<input
+            type="number"
+            name="review[confirmed_unit_price]"
+            min="0"
+            max="1000000000"
+            step="1"
+            inputmode="numeric"
+            required
+            value={@review_entry.confirmed_unit_price || ""}
+          /></label>
+          <div class="review-actions">
+            <button class="button-primary" type="submit" phx-disable-with="Confirming…">
+              <.icon name="check" /> Confirm price
+            </button><button
+              type="button"
+              class="button-secondary"
+              phx-click="cancel-review"
+            >Cancel</button>
+          </div>
+          <small>
+            Confirming records your account and time, and sets the linked product’s selling price.
+            Available stock is confirmed separately through Goods receiving.
+          </small>
+        </.form>
+      </div>
+
+      <div :if={@inventory.entries != []} class="table-wrap">
+        <table class="inventory-table">
+          <thead>
+            <tr>
+              <th>Item / listed qty</th><th>Listed UGX</th><th>Unit UGX</th>
+            </tr>
+          </thead><tbody>
+            <tr
+              :for={entry <- @inventory.entries}
+              class={if entry.status == :confirmed, do: "confirmed"}
+            >
+              <td class="inv-item">
+                <span class="inv-number">{pad(entry.number)}</span><div class="inv-copy">
+                  <b>{entry.item}</b><small>Listed qty {entry.quantity_as_listed}</small><span
+                    :if={entry.product}
+                    class="inv-link"
+                  >{entry.product.sku} · {entry.product.name}</span><p
+                    :if={entry.notes}
+                    class="inv-note"
+                  >
+                    <span class="flag">Review</span> {entry.notes}
+                  </p>
+                </div>
+              </td>
+              <td class="inv-amount">
+                <b>{entry.amount_as_written}</b><small>as written</small>
+              </td>
+              <td class="inv-unit">
+                <span :if={entry.status == :confirmed} class="unit-confirmed">
+                  {money(entry.confirmed_unit_price)}<small>confirmed</small>
+                </span>
+                <button
+                  :if={entry.status != :confirmed and @can_manage}
+                  type="button"
+                  class="btn-confirm"
+                  phx-click="review-entry"
+                  phx-value-id={entry.id}
+                  aria-label={"Confirm unit price for entry #{pad(entry.number)} #{entry.item}"}
+                >Confirm</button>
+                <span :if={entry.status != :confirmed and not @can_manage} class="unit-pending">
+                  Confirm<small>Owner or manager</small>
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p :if={@inventory.entries == []} class="empty-state">
+        No listed entries match this search or filter.
+      </p>
+
+      <div :if={@inventory.total > 0} class="pagination">
+        <span class="page-summary">
+          Rows {@inventory.first}–{@inventory.last} of {@inventory.total}
+        </span>
+        <nav class="page-chips" aria-label="Inventory pages">
+          <button
+            type="button"
+            class="page-chip step"
+            phx-click="inventory-page"
+            phx-value-page={max(@inventory.page - 1, 1)}
+            disabled={@inventory.page <= 1}
+            aria-label="Previous page"
+          >‹</button><span
+            :for={chip <- StockList.page_window(@inventory.page, @inventory.pages)}
+            :if={chip == :gap}
+            class="page-gap"
+            aria-hidden="true"
+          >…</span><button
+            :for={chip <- StockList.page_window(@inventory.page, @inventory.pages)}
+            :if={chip != :gap}
+            type="button"
+            class={if chip == @inventory.page, do: "page-chip active", else: "page-chip"}
+            phx-click="inventory-page"
+            phx-value-page={chip}
+            aria-current={if chip == @inventory.page, do: "page"}
+            aria-label={"Page #{chip}"}
+          >{chip}</button><button
+            type="button"
+            class="page-chip step"
+            phx-click="inventory-page"
+            phx-value-page={min(@inventory.page + 1, @inventory.pages)}
+            disabled={@inventory.page >= @inventory.pages}
+            aria-label="Next page"
+          >›</button>
+        </nav>
+      </div>
+
+      <div class="panel-subhead">
+        <h2>Product stock</h2><span class="pill">{length(@products)} products</span>
+      </div>
+      <p :if={@products == []} class="empty-state">
+        No products yet.
+        <.link :if={@can_manage} patch={~p"/staff/products"} class="text-link">
+          Add products &amp; prices
+        </.link><span :if={not @can_manage}>
+          Only the owner or manager can add products.
+        </span>
+        Then receive stock below.
+      </p>
+      <div :if={@products != []} class="table-wrap">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>Product</th><th>Unit price</th><th>Available</th><th>Stock state</th>
+            </tr>
+          </thead><tbody>
+            <tr :for={p <- @products}>
+              <td>{p.name}<small>{p.sku} · {p.unit}</small></td><td>
+                {if p.price > 0, do: money(p.price), else: "Confirm price"}
+              </td><td>{p.stock} {p.unit}</td><td class="stock-cell">
+                <.stock_badge product={p} /><span
+                  :if={p.price <= 0}
+                  class="stock-state out"
+                >Price unconfirmed</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="receive-form" class="panel-subhead">
+        <h2>Goods receiving</h2>
+      </div>
+      <p>
+        Record deliveries against existing products. Saving appends history and increases stock in one
+        transaction.
+      </p>
+      <.form
+        for={@receiving_form}
+        id="receiving-form"
+        class="admin-form"
+        phx-change="receive-change"
+        phx-submit="receive"
+      >
+        <input
+          type="hidden"
+          name="receiving[request_id]"
+          value={@receiving_form[:request_id].value}
+        />
+        <label>Product<select name="receiving[product_id]" required><option value="">
+          Choose a product
+        </option><option
+          :for={p <- @products}
+          :if={p.active}
+          value={p.id}
+          selected={to_string(p.id) == @receiving_form[:product_id].value}
+        >
+          {p.name} · {p.sku}
+        </option></select></label>
+        <label>Received quantity<input
+          type="number"
+          min="1"
+          max="100000"
+          step="1"
+          name="receiving[quantity]"
+          value={@receiving_form[:quantity].value}
+          required
+          inputmode="numeric"
+        /></label>
+        <label>Buying cost per unit (UGX, optional)<input
+          type="number"
+          min="0"
+          step="1"
+          name="receiving[buying_cost]"
+          value={@receiving_form[:buying_cost].value}
+          inputmode="numeric"
+        /></label>
+        <label>Supplier (optional)<input
+          name="receiving[supplier]"
+          value={@receiving_form[:supplier].value}
+          maxlength="200"
+        /></label>
+        <label>Delivery / invoice reference<input
+          name="receiving[reference]"
+          value={@receiving_form[:reference].value}
+          maxlength="200"
+        /></label>
+        <div class="wide">
+          <button
+            class="button-primary"
+            type="submit"
+            phx-disable-with="Saving receiving…"
+          >Save receiving record <.icon name="arrow" /></button>
+        </div>
+      </.form>
+      <h3>Receiving history</h3><p :if={@receivings == []}>No receiving records yet.</p><div
+        :for={r <- @receivings}
+        class="history-row"
+      >
+        <b>GR-{r.id} · {r.product.name} × {r.quantity}</b><span>{local_time(r.inserted_at)} · {r.supplier ||
+          "Supplier not recorded"} · {r.reference}</span><small>{if is_nil(r.buying_cost),
+          do: "Buying cost not recorded",
+          else: "Line total: " <> money(r.buying_cost * r.quantity)}</small>
+      </div>
+    </section>
+
+    <section :if={@live_action == :products} class="receiving-panel">
+      <div class="page-heading">
+        <div>
+          <span class="eyebrow">CATALOGUE</span><h1>Products &amp; prices</h1><p>
+            Set selling prices here. Stock changes are recorded through Goods receiving and sales.
+          </p>
+        </div>
+      </div>
+      <h2>{if @product_id, do: "Edit product", else: "Add product"}</h2>
+      <.form for={@product_form} id="product-form" class="admin-form" phx-submit="save-product">
+        <label>Product name<input
+          name="product[name]"
+          value={@product_form[:name].value}
+          required
+          maxlength="160"
+        /></label>
+        <label>SKU<input
+          name="product[sku]"
+          value={@product_form[:sku].value}
+          required
+          maxlength="80"
+        /></label>
+        <label>Category<select name="product[category]" required><option
+          :for={category <- @categories}
+          value={category}
+          selected={category == @product_form[:category].value}
+        >
+          {category}
+        </option></select></label>
+        <label>Selling price (UGX)<input
+          type="number"
+          min="0"
+          max="1000000000"
+          step="1"
+          inputmode="numeric"
+          name="product[price]"
+          value={@product_form[:price].value}
+          required
+        /></label>
+        <label>Unit<input
+          name="product[unit]"
+          value={@product_form[:unit].value}
+          required
+          maxlength="40"
+        /></label>
+        <label>Reorder level for low-stock alerts (optional)<input
+          type="number"
+          min="0"
+          max="1000000000"
+          step="1"
+          inputmode="numeric"
+          name="product[reorder_level]"
+          value={@product_form[:reorder_level].value}
+          placeholder="No threshold"
+        /></label>
+        <label>Image<select name="product[image]"><option
+          :for={
+            file <-
+              ~w(kitchen-essentials.jpg travel-everyday-bags.jpg bedding-comfort.jpg household-storage.jpg school-essentials.jpg home-organisation.jpg)
+          }
+          value={"/resources/" <> file}
+          selected={"/resources/" <> file == @product_form[:image].value}
+        >
+          {file}
+        </option></select></label>
+        <label>Visible in catalogue<select name="product[active]"><option
+          value="true"
+          selected={@product_form[:active].value in [true, "true"]}
+        >
+          Yes
+        </option><option value="false" selected={@product_form[:active].value in [false, "false"]}>
+          No
+        </option></select></label>
+        <div class="wide inline-actions">
+          <button class="button-primary" type="submit" phx-disable-with="Saving product…">
+            Save product
+          </button><button
+            type="button"
+            class="button-secondary"
+            phx-click="new-product"
+          >New product</button>
+        </div>
+      </.form>
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Product</th><th>Price</th><th>Stock</th><th>Status</th><th></th>
+            </tr>
+          </thead><tbody>
+            <tr :for={p <- @products}>
+              <td>{p.name}<small>{p.sku}</small></td><td>
+                {if p.price > 0, do: money(p.price), else: "Confirm price"}
+              </td><td>{p.stock}</td><td>
+                {if p.active, do: "Visible", else: "Hidden"}
+              </td><td>
+                <button
+                  class="button-secondary"
+                  phx-click="edit-product"
+                  phx-value-id={p.id}
+                >Edit</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section :if={@live_action == :reports} class="receiving-panel">
+      <div class="page-heading">
+        <div>
+          <span class="eyebrow">REPORTING</span><h1>Sales analytics &amp; reports</h1><p>
+            Manual payment records over the selected date range. Date filters use East Africa Time.
+          </p>
+        </div>
+      </div>
+      <div class="report-heading">
+        <div>
+          <h2>Sales overview</h2><p>
+            All sales in the selected date range. Recent records are limited to 50 rows.
+          </p>
+        </div>
+      </div>
+      <div class="report-filters">
+        <form id="report-filters" phx-change="filter-report" phx-submit="filter-report">
+          <label>From date<input type="date" name="from" value={@filters["from"]} /></label><label>To date<input
+            type="date"
+            name="to"
+            value={@filters["to"]}
+          /></label><button class="button-secondary" type="button" phx-click="clear-dates">Clear dates</button><a
+            class="button-primary"
+            href={"/staff/reports.csv?" <> URI.encode_query(@filters)}
+          >Export CSV</a>
+        </form>
+      </div>
+      <div :if={@report}>
+        <div class="report-metrics">
+          <article>
+            <small>Recorded revenue</small><strong>{money(@report.total)}</strong>
+          </article><article>
+            <small>Completed sales</small><strong>{@report.count}</strong>
+          </article><article>
+            <small>Average sale</small><strong>{money(@report.average)}</strong>
+          </article><article><small>Scope</small><strong>Full date range</strong></article>
+        </div>
+        <h3>Payment method breakdown</h3><div class="report-table">
+          <div class="report-row report-head"><b>Method</b><b>Sales</b><b>Recorded total</b></div><div
+            :for={m <- @report.methods}
+            class="report-row"
+          >
+            <span>{m.method}</span><span>{m.count}</span><span>{money(m.total)}</span>
+          </div>
+        </div>
+        <h3>Best-selling products</h3><div class="report-table">
+          <div class="report-row report-head">
+            <b>Product</b><b>Qty sold</b><b>Sales value</b>
+          </div><div :for={p <- @report.best} class="report-row">
+            <span>{p.name}<small>{p.sku}</small></span><span>{p.quantity}</span><span>{money(
+              p.revenue
+            )}</span>
+          </div>
+        </div>
+        <h3>Recent recorded sales</h3><p :if={@report.sales == []}>
+          No sales match this date range.
+        </p><div :for={s <- @report.sales} class="history-row">
+          <b>RS-{s.id}</b><span>{local_time(s.inserted_at)} · {s.payment_method} · {money(s.total)} · Manual record</span>
+        </div>
+      </div><p class="warning-copy">
+        Payment methods are manual records and do not mean a provider verified payment. CSV exports
+        include all matching sales.
+      </p>
+    </section>
+
+    <section :if={@live_action == :team} class="receiving-panel">
+      <div class="page-heading">
+        <div>
+          <span class="eyebrow">ACCESS</span><h1>Staff accounts</h1><p>
+            Owners manage accounts. Managers manage products and reports; cashiers post sales;
+            receivers record deliveries.
+          </p>
+        </div>
+      </div>
+      <.form for={@team_form} id="staff-form" class="admin-form" phx-submit="create-staff">
+        <label>Name<input name="staff[name]" required maxlength="100" /></label><label>Email<input
+          name="staff[email]"
+          type="email"
+          required
+          maxlength="254"
+          autocomplete="off"
+        /></label><label>Temporary password (16–128 characters)<input
+          name="staff[password]"
+          type="password"
+          minlength="16"
+          maxlength="128"
+          autocomplete="new-password"
+          required
+        /></label><label>Role<select name="staff[role]"><option value="cashier">Cashier</option><option value="receiver">
+          Receiver
+        </option><option value="manager">Manager</option></select></label><div class="wide">
+          <button class="button-primary" type="submit" phx-disable-with="Creating account…">
+            Create staff account
+          </button>
+        </div>
+      </.form>
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Name</th><th>Role</th><th>Status</th><th></th>
+            </tr>
+          </thead><tbody>
+            <tr :for={u <- @team}>
+              <td>{u.name}<small>{u.email}</small></td><td>{u.role}</td><td>
+                {if u.active, do: "Active", else: "Inactive"}
+              </td><td>
+                <button
+                  :if={u.role != :owner and u.active}
+                  class="button-secondary"
+                  phx-click="deactivate-staff"
+                  phx-value-id={u.id}
+                >Deactivate</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section :if={@can_sale and @live_action != :reports} class="staff-history">
+      <h2>Recent sales</h2><p :if={@sales == []}>No sales recorded yet.</p><div
+        :for={s <- @sales}
+        class="history-row"
+      >
+        <b>RS-{s.id}</b><span>{s.payment_method} · {money(s.total)} · {local_time(s.inserted_at)}</span>
+      </div>
+    </section>
+    <div class="staff-bottom">
+      <.icon name="lock" size={16} /><span>Server confirmation required · staff actions are authorised on the server</span>
+    </div>
+  </main>
+
+  <div :if={@more_open} class="sheet-backdrop" phx-click="more-toggle" aria-hidden="true"></div>
+  <div
+    :if={@more_open}
+    class="more-sheet"
+    role="dialog"
+    aria-modal="true"
+    aria-label="More destinations"
+  >
+    <div class="more-head">
+      <b>More</b><button
+        type="button"
+        class="icon-btn"
+        phx-click="more-toggle"
+        aria-label="Close menu"
+      >
+        <.icon name="close" />
+      </button>
+    </div>
+    <.link :if={@can_manage} patch={~p"/staff/products"} class="more-link">Products &amp; prices</.link>
+    <.link :if={@can_report} patch={~p"/staff/reports"} class="more-link">Reports</.link>
+    <.link :if={@can_team} patch={~p"/staff/team"} class="more-link">Staff accounts</.link>
+    <a href={~p"/"} class="more-link">Public shop</a><.form
+      for={%{}}
+      action={~p"/staff/sign-out"}
+      method="delete"
+      class="more-form"
+    >
+      <button type="submit" class="more-link">Sign out</button>
+    </.form>
+  </div>
+
+  <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+    <ul class="mobile-nav-list">
+      <li class="mobile-nav-item">
+        <a href={~p"/"} class="mobile-nav-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z">
+          </path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          <span>Shop</span>
+        </a>
+      </li>
+      <li :if={@can_sale} class="mobile-nav-item">
+        <.link
+          patch={~p"/staff/pos"}
+          class={"mobile-nav-link #{if @live_action == :pos, do: "active"}"}
+          aria-current={if @live_action == :pos, do: "page"}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect
+            x="2"
+            y="3"
+            width="20"
+            height="18"
+            rx="2"
+            ry="2"
+          >
+          </rect><line x1="2" y1="9" x2="22" y2="9"></line></svg>
+          <span>POS</span>
+        </.link>
+      </li>
+      <li :if={@can_receive} class="mobile-nav-item">
+        <.link
+          patch={~p"/staff/receiving"}
+          class={"mobile-nav-link #{if @live_action == :receiving, do: "active"}"}
+          aria-current={if @live_action == :receiving, do: "page"}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 3h18v18H3zM12 8v8M8 12h8">
+          </path></svg>
+          <span>Inventory</span>
+        </.link>
+      </li>
+      <li :if={@can_report} class="mobile-nav-item">
+        <.link
+          patch={~p"/staff/reports"}
+          class={"mobile-nav-link #{if @live_action == :reports, do: "active"}"}
+          aria-current={if @live_action == :reports, do: "page"}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 3v18h18"></path><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3">
+          </path></svg>
+          <span>Reports</span>
+        </.link>
+      </li>
+      <li class="mobile-nav-item">
+        <button
+          type="button"
+          class={"mobile-nav-link #{if @more_open, do: "active"}"}
+          phx-click="more-toggle"
+          aria-expanded={to_string(@more_open)}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle
+            cx="5"
+            cy="12"
+            r="1.6"
+          >
+          </circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="19" cy="12" r="1.6">
+          </circle></svg>
+          <span>More</span>
+        </button>
+      </li>
+    </ul>
+  </nav>
+</div>
