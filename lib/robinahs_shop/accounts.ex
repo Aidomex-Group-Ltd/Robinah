@@ -19,6 +19,22 @@ defmodule RobinahsShop.Accounts do
 
   def allowed?(_, _), do: false
 
+  # Temporary public-access mode for testing. When `PUBLIC_ACCESS` is truthy,
+  # every visitor is treated as the shop owner so all staff tools work without
+  # signing in. It is OFF unless the environment variable is set, and the real
+  # owner row is reused so every role check in the app still behaves normally.
+  @public_access_values ["true", "1", "yes", "on"]
+
+  def public_access_enabled? do
+    System.get_env("PUBLIC_ACCESS") in @public_access_values
+  end
+
+  def public_access_user do
+    if public_access_enabled?() do
+      Repo.one(from u in Staff, where: u.role == :owner and u.active == true, limit: 1)
+    end
+  end
+
   def create_staff(actor, attrs) do
     if allowed?(actor, :team) and attrs["role"] in ["manager", "cashier", "receiver"] do
       insert_staff(attrs)
