@@ -107,6 +107,87 @@ defmodule RobinahsShopWeb.Components do
   end
 
   @doc """
+  Shared trolley trigger (cart/trolley icon + live count badge and total).
+  Used by both the storefront and the POS so the basket is a single source of truth.
+  """
+  attr :count, :integer, required: true
+  attr :total, :integer, default: nil
+  attr :open, :boolean, default: false
+  attr :label, :string, default: "Enquiry"
+  attr :on_click, :string, required: true
+  attr :class, :string, default: nil
+
+  def trolley_button(assigns) do
+    ~H"""
+    <button
+      type="button"
+      class={["trolley-button", @class]}
+      phx-click={@on_click}
+      aria-label={"Toggle basket, #{@count} items"}
+      aria-expanded={to_string(@open)}
+    >
+      <.icon name="cart" /><span>{@label}</span>
+      <b :if={@count > 0}>{@count}</b>
+      <small :if={@total && @total > 0} class="trolley-total">{money(@total)}</small>
+    </button>
+    """
+  end
+
+  @doc """
+  Shared cart line item (name, unit price, quantity stepper, row total).
+  `row_total` auto-increments as quantity changes.
+  """
+  attr :name, :string, required: true
+  attr :unit_price, :integer, default: 0
+  attr :unit, :string, default: nil
+  attr :quantity, :integer, required: true
+  attr :id, :string, required: true
+  attr :on_plus, :string, required: true
+  attr :on_minus, :string, required: true
+  attr :on_remove, :string, default: nil
+
+  def cart_line(assigns) do
+    assigns =
+      assign(assigns, :row_total, assigns.unit_price * assigns.quantity)
+
+    ~H"""
+    <div class="cart-line">
+      <div class="cart-line-info">
+        <b>{@name}</b>
+        <small>
+          {if @unit_price > 0,
+            do: money(@unit_price) <> if(@unit, do: " / " <> @unit, else: ""),
+            else: "Confirm price"}
+        </small>
+      </div>
+      <div class="quantity cart-line-qty">
+        <button
+          type="button"
+          phx-click={@on_minus}
+          phx-value-id={@id}
+          aria-label={"Decrease #{@name}"}
+        >
+          −
+        </button>
+        <span class="qty-value">{@quantity}</span>
+        <button type="button" phx-click={@on_plus} phx-value-id={@id} aria-label={"Increase #{@name}"}>
+          +
+        </button>
+      </div>
+      <b class="cart-line-total">{if @unit_price > 0, do: money(@row_total), else: "—"}</b>
+      <button
+        :if={@on_remove}
+        type="button"
+        class="cart-line-remove"
+        phx-click={@on_remove}
+        phx-value-id={@id}
+        aria-label={"Remove #{@name}"}
+      ><.icon name="close" size={16} /></button>
+    </div>
+    """
+  end
+
+  @doc """
   Verified stock state badge built from database values only.
   """
   attr :product, :map, required: true

@@ -15,15 +15,15 @@
         <b>ROBINAH’S SHOP</b><span>Mbarara · UGX</span>
       </div>
       <div class="brand-tools">
-        <button
+        <.trolley_button
           :if={@live_action == :pos}
-          type="button"
+          count={cart_count(@cart)}
+          total={total(@products, @cart)}
+          open={false}
+          label="Basket"
+          on_click="review-basket"
           class="basket-tool"
-          phx-click="review-basket"
-          aria-label={"Review current sale, #{cart_count(@cart)} items"}
-        >
-          <.icon name="bag" /><b>{cart_count(@cart)}</b>
-        </button>
+        />
         <button type="button" class="tool-btn" phx-click="refresh" aria-label="Refresh data">
           <.icon name="refresh" /><span class="tool-label">Refresh</span>
         </button>
@@ -200,42 +200,64 @@
             </span>
           </div>
           <p :if={@cart == %{}} class="empty-state">Add products to begin a sale.</p>
-          <div class="basket-items">
-            <div :for={p <- basket(@products, @cart)} class="basket-row">
-              <div class="basket-info">
-                <b>{p.name}</b><small>
-                  {if p.price > 0,
-                    do: money(p.price) <> " / " <> p.unit,
-                    else: "Confirm price"}
-                </small>
-              </div>
-              <div class="basket-qty">
-                <button
-                  type="button"
-                  phx-click="minus"
-                  phx-value-id={p.id}
-                  aria-label={"Decrease #{p.name}"}
-                >−</button><span class="qty-value">{@cart[to_string(p.id)]}</span><button
-                  type="button"
-                  phx-click="add"
-                  phx-value-id={p.id}
-                  aria-label={"Increase #{p.name}"}
-                >+</button>
-              </div>
-              <button
-                type="button"
-                class="basket-remove"
-                phx-click="remove"
-                phx-value-id={p.id}
-                aria-label={"Remove #{p.name} from the sale"}
-              ><.icon name="close" size={16} /></button>
-            </div>
+          <div :if={@cart != %{}} class="sale-table-wrap">
+            <table class="sale-table">
+              <thead>
+                <tr>
+                  <th scope="col" class="col-item">Item</th>
+                  <th scope="col" class="col-qty">Qty</th>
+                  <th scope="col" class="col-unit">Unit price</th>
+                  <th scope="col" class="col-total">Amount</th>
+                  <th scope="col" class="col-remove"><span class="sr-only">Remove</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr :for={line <- cart_line(@products, @cart)} id={"sale-row-#{line.product.id}"}>
+                  <td class="col-item">
+                    <b>{line.product.name}</b>
+                    <small>{line.product.sku} · {line.product.unit}</small>
+                  </td>
+                  <td class="col-qty">
+                    <div class="quantity">
+                      <button
+                        type="button"
+                        phx-click="minus"
+                        phx-value-id={line.product.id}
+                        aria-label={"Decrease #{line.product.name}"}
+                      >−</button><span class="qty-value">{line.quantity}</span><button
+                        type="button"
+                        phx-click="add"
+                        phx-value-id={line.product.id}
+                        aria-label={"Increase #{line.product.name}"}
+                      >+</button>
+                    </div>
+                  </td>
+                  <td class="col-unit">
+                    {if line.product.price > 0,
+                      do: money(line.product.price),
+                      else: "Confirm price"}
+                  </td>
+                  <td class="col-total">
+                    <b>{if line.product.price > 0, do: money(line.total), else: "—"}</b>
+                  </td>
+                  <td class="col-remove">
+                    <button
+                      type="button"
+                      class="basket-remove"
+                      phx-click="remove"
+                      phx-value-id={line.product.id}
+                      aria-label={"Remove #{line.product.name} from the sale"}
+                    ><.icon name="close" size={16} /></button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
           <div class="total-section">
             <div class="total-line">
-              <span>Total</span><b>{money(total(@products, @cart))}</b>
+              <span>Total</span><b id="sale-grand-total">{money(total(@products, @cart))}</b>
             </div>
-            <p class="total-note">Calculated on the server from confirmed unit prices.</p>
+            <p class="total-note">Auto-calculated from quantity × confirmed unit price.</p>
           </div>
           <.form for={@sale_form} id="sale-form" phx-change="sale-change" phx-submit="post-sale">
             <div class="payment-buttons" role="group" aria-label="Payment method">
@@ -292,21 +314,44 @@
           </small>
         </section>
       </div>
-      <section :if={@receipt} class="receipt">
+      <section :if={@receipt} class="receipt" id="receipt" role="dialog" aria-label="Receipt">
+        <div class="receipt-head">
+          <span class="eyebrow">RECEIPT</span>
+          <button
+            type="button"
+            class="receipt-close"
+            phx-click="close-receipt"
+            aria-label="Close receipt"
+          ><.icon name="close" size={18} /></button>
+        </div>
         <h3>Robinah’s Shop · Receipt RS-{@receipt.id}</h3><p>
           {local_time(@receipt.inserted_at)}
-        </p><ul>
-          <li :for={item <- @receipt.items}>
-            {item.name} × {item.quantity} — {money(item.quantity * item.unit_price)}
-          </li>
-        </ul><p><b>Total: {money(@receipt.total)}</b> · {@receipt.payment_method}</p><p :if={
+        </p>
+        <table class="receipt-table">
+          <thead>
+            <tr>
+              <th scope="col">Item</th>
+              <th scope="col">Qty</th>
+              <th scope="col">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr :for={item <- @receipt.items}>
+              <td>{item.name}</td>
+              <td>{item.quantity}</td>
+              <td>{money(item.quantity * item.unit_price)}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p><b>Total: {money(@receipt.total)}</b> · {@receipt.payment_method}</p><p :if={
           @receipt.cash_received
         }>
           Cash received: {money(@receipt.cash_received)} · Change: {money(@receipt.change)}
-        </p><small>Manual payment record. +256 774 843 183 · Koranorya, Mbarara.</small><button
-          class="button-secondary"
-          phx-click="print"
-        >Print receipt</button>
+        </p><small>Manual payment record. +256 774 843 183 · Koranorya, Mbarara.</small>
+        <div class="receipt-actions">
+          <button class="button-primary" phx-click="print"><.icon name="download" /> Print receipt</button>
+          <button class="button-secondary" phx-click="close-receipt">New sale</button>
+        </div>
       </section>
     </div>
 

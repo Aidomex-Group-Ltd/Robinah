@@ -2,6 +2,7 @@ defmodule RobinahsShopWeb.StaffLive do
   use RobinahsShopWeb, :live_view
 
   alias RobinahsShop.StockList
+  alias RobinahsShopWeb.Cart
 
   @empty_receiving %{
     "product_id" => "",
@@ -22,7 +23,7 @@ defmodule RobinahsShopWeb.StaffLive do
         categories: Shop.categories(),
         q: "",
         category: "All items",
-        cart: %{},
+        cart: Cart.new(),
         receiving_form: to_form(receiving_params(), as: :receiving),
         sale_form: to_form(%{"payment_method" => "Cash", "cash_received" => ""}, as: :sale),
         sale_request_id: Ecto.UUID.generate(),
@@ -98,24 +99,32 @@ defmodule RobinahsShopWeb.StaffLive do
   def handle_event("show-all", _, socket),
     do: {:noreply, assign(socket, q: "", category: "All items")}
 
-  def handle_event("add", %{"id" => id}, socket) do
+  def handle_event("add", %{"id" => id}, socket) when is_binary(id) and byte_size(id) <= 40 do
     if Accounts.allowed?(socket.assigns.current_user, :sale) and
          Enum.any?(socket.assigns.products, &(to_string(&1.id) == id and &1.active)) do
-      {:noreply, update(socket, :cart, &Map.update(&1, id, 1, fn q -> min(q + 1, 100_000) end))}
+      {:noreply, update(socket, :cart, &Cart.add(&1, id))}
     else
       {:noreply, put_flash(socket, :error, "Product or permission unavailable.")}
     end
   end
 
-  def handle_event("minus", %{"id" => id}, socket),
-    do:
-      {:noreply,
-       update(socket, :cart, fn cart ->
-         Map.update(cart, id, 0, &max(&1 - 1, 0)) |> Map.reject(fn {_, q} -> q == 0 end)
-       end)}
+  def handle_event("add", _, socket), do: {:noreply, socket}
 
-  def handle_event("remove", %{"id" => id}, socket),
-    do: {:noreply, update(socket, :cart, &Map.delete(&1, id))}
+  def handle_event("minus", %{"id" => id}, socket) when is_binary(id) do
+    if Accounts.allowed?(socket.assigns.current_user, :sale) do
+      {:noreply, update(socket, :cart, &Cart.minus(&1, id))}
+    else
+      {:noreply, put_flash(socket, :error, "Your role does not permit sales.")}
+    end
+  end
+
+  def handle_event("remove", %{"id" => id}, socket) when is_binary(id) do
+    if Accounts.allowed?(socket.assigns.current_user, :sale) do
+      {:noreply, update(socket, :cart, &Cart.remove(&1, id))}
+    else
+      {:noreply, put_flash(socket, :error, "Your role does not permit sales.")}
+    end
+  end
 
   def handle_event("review-basket", _, socket) do
     {:noreply, push_event(socket, "scroll-basket", %{})}
@@ -137,33 +146,41 @@ defmodule RobinahsShopWeb.StaffLive do
   end
 
   def handle_event("post-sale", %{"sale" => params}, socket) do
-    attrs =
-      Map.merge(params, %{
-        "request_id" => socket.assigns.sale_request_id,
-        "items" =>
-          Enum.map(socket.assigns.cart, fn {id, quantity} ->
-            %{"product_id" => id, "quantity" => quantity}
-          end)
-      })
+    cond do
+      socket.assigns.cart == %{} ->
+        {:noreply, put_flash(socket, :error, "Add at least one item before checkout.")}
 
-    case Shop.post_sale(socket.assigns.current_user, attrs) do
-      {:ok, sale} ->
+      unconfirmed_prices?(socket.assigns.products, socket.assigns.cart) ->
         {:noreply,
-         socket
-         |> assign(
-           cart: %{},
-           receipt: sale,
-           sale_request_id: Ecto.UUID.generate(),
-           sale_form: to_form(%{"payment_method" => "Cash", "cash_received" => ""}, as: :sale)
-         )
-         |> refresh()
-         |> put_flash(
-           :info,
-           "Sale posted. Receipt RS-#{sale.id}. Payment method is a manual record."
-         )}
+         put_flash(socket, :error, "Confirm unit prices for every item before checkout.")}
 
-      {:error, error} ->
-        {:noreply, put_flash(socket, :error, Shop.error_message(error))}
+      true ->
+        attrs =
+          Map.merge(params, %{
+            "request_id" => socket.assigns.sale_request_id,
+            "items" => Cart.to_sale_items(socket.assigns.cart)
+          })
+
+        case Shop.post_sale(socket.assigns.current_user, attrs) do
+          {:ok, sale} ->
+            {:noreply,
+             socket
+             |> assign(
+               cart: Cart.new(),
+               receipt: sale,
+               sale_request_id: Ecto.UUID.generate(),
+               sale_form: to_form(%{"payment_method" => "Cash", "cash_received" => ""}, as: :sale)
+             )
+             |> refresh()
+             |> push_event("focus-receipt", %{})
+             |> put_flash(
+               :info,
+               "Sale posted. Receipt RS-#{sale.id}. Payment method is a manual record."
+             )}
+
+          {:error, error} ->
+            {:noreply, put_flash(socket, :error, Shop.error_message(error))}
+        end
     end
   end
 
@@ -304,6 +321,10 @@ defmodule RobinahsShopWeb.StaffLive do
 
   def handle_event("refresh", _, socket), do: {:noreply, refresh(socket)}
   def handle_event("print", _, socket), do: {:noreply, push_event(socket, "print", %{})}
+
+  def handle_event("close-receipt", _, socket),
+    do: {:noreply, assign(socket, receipt: nil)}
+
   def handle_info(:shop_changed, socket), do: {:noreply, refresh(socket)}
 
   defp refresh(socket) do
@@ -369,15 +390,15 @@ defmodule RobinahsShopWeb.StaffLive do
   def title(:reports), do: "Sales analytics & reports"
   def title(:team), do: "Staff accounts"
 
-  def basket(products, cart), do: Enum.filter(products, &(Map.get(cart, to_string(&1.id), 0) > 0))
+  def cart_count(cart), do: Cart.count(cart)
 
-  def cart_count(cart), do: cart |> Map.values() |> Enum.sum()
+  def total(products, cart), do: Cart.total(products, cart)
 
-  def total(products, cart),
-    do:
-      Enum.reduce(basket(products, cart), 0, fn p, sum ->
-        sum + p.price * cart[to_string(p.id)]
-      end)
+  def cart_line(products, cart) do
+    Enum.map(Cart.items(products, cart), fn p ->
+      %{product: p, quantity: Map.get(cart, to_string(p.id), 0), total: Cart.row_total(p, cart)}
+    end)
+  end
 
   def visible_products(products, category, q) do
     term = String.downcase(q)
@@ -390,7 +411,7 @@ defmodule RobinahsShopWeb.StaffLive do
   end
 
   def unconfirmed_prices?(products, cart),
-    do: Enum.any?(basket(products, cart), &(&1.price <= 0))
+    do: Cart.has_unconfirmed_prices?(products, cart)
 
   def pad(number) when number < 10, do: "0#{number}"
   def pad(number), do: to_string(number)

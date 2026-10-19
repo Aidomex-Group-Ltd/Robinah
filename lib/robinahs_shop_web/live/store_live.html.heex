@@ -12,12 +12,12 @@
       <a class="nav-staff" href={~p"/staff/pos"}>Staff POS <.icon name="arrow" size={15} /></a>
     </nav>
     <div class="header-actions">
-      <button
-        class="basket-button"
-        phx-click="basket"
-        aria-label="Toggle enquiry basket"
-        aria-expanded={to_string(@basket_open)}
-      ><.icon name="cart" /><span>Enquiry</span><b :if={cart_total(@cart) > 0}>{cart_total(@cart)}</b></button><button
+      <.trolley_button
+        count={cart_total(@cart)}
+        open={@basket_open}
+        on_click="basket"
+        label="Enquiry"
+      /><button
         class="menu-toggle"
         phx-click="menu"
         aria-label="Toggle navigation"
@@ -252,21 +252,28 @@
       <h3>Your enquiry</h3><button phx-click="basket" aria-label="Close enquiry"><.icon name="close" /></button>
     </div>
     <div :for={product <- cart_items(@products, @cart)} class="basket-line">
-      <div><b>{product.name}</b><small>{product.sku} · Price to be confirmed</small></div><div class="quantity">
-        <button
-          phx-click="minus"
-          phx-value-id={product.id}
-          aria-label={"Decrease #{product.name}"}
-        >−</button><b>{@cart[to_string(product.id)]}</b><button
-          phx-click="add"
-          phx-value-id={product.id}
-          aria-label={"Increase #{product.name}"}
-        >+</button>
-      </div>
+      <.cart_line
+        id={to_string(product.id)}
+        name={product.name}
+        unit_price={product.price}
+        unit={product.unit}
+        quantity={Map.get(@cart, to_string(product.id), 0)}
+        on_plus="add"
+        on_minus="minus"
+      />
     </div>
     <p :if={cart_items(@products, @cart) == []}>
       Your enquiry basket is empty. Add items from the catalogue.
     </p>
+    <div :if={cart_items(@products, @cart) != []} class="total-section">
+      <div class="total-line">
+        <span>Items {cart_total(@cart)}</span>
+        <b>{RobinahsShopWeb.Components.money(RobinahsShopWeb.Cart.total(@products, @cart))}</b>
+      </div>
+      <p class="total-note">
+        Indicative total from listed prices. The shop confirms final prices and stock.
+      </p>
+    </div>
     <a
       :if={cart_items(@products, @cart) != []}
       class="button-primary full"

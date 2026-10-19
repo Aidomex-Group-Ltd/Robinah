@@ -12,7 +12,7 @@ defmodule RobinahsShopWeb.LiveFlowsTest do
     assert has_element?(view, "#catalogue-products .product-card", "Torch")
     refute has_element?(view, "#catalogue-products .product-card", "Ruler")
     view |> element(".product-bottom button", "Add to enquiry") |> render_click()
-    view |> element(".basket-button") |> render_click()
+    view |> element(".trolley-button") |> render_click()
     assert has_element?(view, ".basket-drawer .basket-line", "Torch")
     assert has_element?(view, ".basket-drawer a[href*=\"wa.me\"]")
   end
@@ -21,25 +21,60 @@ defmodule RobinahsShopWeb.LiveFlowsTest do
     Shop.seed_catalogue()
     {:ok, view, _} = live(build_conn(), "/")
 
-    refute has_element?(view, ".basket-button b")
+    refute has_element?(view, ".trolley-button b")
 
     view |> form("#catalogue-search", %{q: "Torch"}) |> render_change()
 
     view |> element(".product-bottom button", "Add to enquiry") |> render_click()
-    assert has_element?(view, ".basket-button b", "1")
+    assert has_element?(view, ".trolley-button b", "1")
 
     view |> element(".product-bottom button", "Add to enquiry") |> render_click()
-    assert has_element?(view, ".basket-button b", "2")
+    assert has_element?(view, ".trolley-button b", "2")
 
-    view |> element(".basket-button") |> render_click()
+    view |> element(".trolley-button") |> render_click()
     assert has_element?(view, ".basket-drawer .basket-line", "Torch")
 
     view |> element(".basket-line .quantity button[phx-click='minus']") |> render_click()
-    assert has_element?(view, ".basket-button b", "1")
+    assert has_element?(view, ".trolley-button b", "1")
 
     view |> element(".basket-line .quantity button[phx-click='minus']") |> render_click()
-    refute has_element?(view, ".basket-button b")
+    refute has_element?(view, ".trolley-button b")
     refute has_element?(view, ".basket-drawer .basket-line", "Torch")
+  end
+
+  test "POS sale table auto-increments row amounts and the grand total" do
+    owner = owner_fixture()
+    product = product_fixture(owner, %{"price" => 2500})
+    conn = build_conn() |> init_test_session(%{staff_token: Accounts.create_session(owner)})
+    {:ok, view, _} = live(conn, "/staff/receiving")
+
+    view
+    |> form("#receiving-form",
+      receiving: %{product_id: to_string(product.id), quantity: "5", buying_cost: "1000"}
+    )
+    |> render_submit()
+
+    view |> element("nav.staff-tabs a", "POS") |> render_click()
+    view |> element(".product-card-pos", product.name) |> render_click()
+
+    assert has_element?(view, ".sale-table tbody tr", product.name)
+    assert has_element?(view, ".sale-table .col-unit", "UGX 2,500")
+    assert has_element?(view, ".sale-table .col-total b", "UGX 2,500")
+    assert has_element?(view, "#sale-grand-total", "UGX 2,500")
+
+    view
+    |> element(".sale-table tr .quantity button[phx-click='add']")
+    |> render_click()
+
+    assert has_element?(view, ".sale-table .col-qty .qty-value", "2")
+    assert has_element?(view, ".sale-table .col-total b", "UGX 5,000")
+    assert has_element?(view, "#sale-grand-total", "UGX 5,000")
+
+    view
+    |> element(".sale-table tr .quantity button[phx-click='minus']")
+    |> render_click()
+
+    assert has_element?(view, "#sale-grand-total", "UGX 2,500")
   end
 
   test "staff receiving and sale flow changes stock and issues a confirmed receipt" do
