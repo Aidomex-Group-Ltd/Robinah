@@ -93,23 +93,25 @@ The repository ships a `render.yaml` blueprint: a Docker web service built from 
 1. Generate the secrets first: `bash scripts/init-env.sh` (or `openssl rand -hex 64` for `SECRET_KEY_BASE`, a random password of 16+ characters for `ADMIN_PASSWORD`).
 2. Render Dashboard → **New → Blueprint** → connect `Aidomex-Group-Ltd/Robinah` → keep the root directory `/` and confirm `render.yaml`.
 3. On first sync, fill the prompted values: `DATABASE_URL` (the complete URL of your PostgreSQL server, see below), `SECRET_KEY_BASE` (64+ bytes), `ADMIN_EMAIL`, `ADMIN_PASSWORD`.
-4. Deploy. The service listens on `PORT` 10000, `PHX_HOST` is set automatically from the `onrender.com` hostname, and `DATABASE_URL` is the value entered at the first sync — it is kept across later syncs and never written to git.
-5. If you had previously linked a Render Postgres instance through this blueprint, the sync now offers to delete it (`robinahs-shop-db` is no longer in `render.yaml`). Confirm only once its contents are no longer needed.
+4. Deploy. The service listens on `PORT` 10000 and `PHX_HOST` is derived automatically from `RENDER_EXTERNAL_HOSTNAME`; `DATABASE_URL` is the value entered at the first sync — it is kept across later syncs and never written to git.
+5. On an **existing** service, `sync: false` variables are not re-prompted: set `DATABASE_URL` (and any rotated secret) by hand in **Environment**, then deploy. A blueprint update never overwrites a variable that already exists.
+6. If you had previously linked a Render Postgres instance through this blueprint, the sync now offers to delete it (`robinahs-shop-db` is no longer in `render.yaml`). Decline until its contents are no longer needed.
 
 `DATABASE_URL` is a complete URL with scheme, host, port and database name:
 
 - External server (Aiven, RDS, DigitalOcean, …): `postgresql://user:password@host:5432/database?sslmode=require`. TLS is required — without `sslmode=require` the release refuses to start, because Postgrex would otherwise open a plain TCP connection to a TLS-only port. `sslmode=verify-ca`/`verify-full` additionally validate the certificate chain against the OS CA store.
 - Render Postgres in the same region: the instance's **Internal** URL (`postgresql://user:pass@host.render.internal:5432/database`, no `sslmode`). It only resolves when the database shares the service's region; an external URL removes that constraint.
 
-Manual equivalent, for the New Web Service page: a Docker web service from this repository (runtime **Docker**, root directory `/`, health check path `/healthz`) and set the variables listed below by hand. The service self-configures its hostname from Render, so `PHX_HOST` is optional.
+Manual equivalent, for the New Web Service page: a Docker web service from this repository (runtime **Docker**, root directory `/`, health check path `/healthz`) and set the variables listed below by hand. The service derives its hostname from Render, so `PHX_HOST` must be left unset.
 
 | Variable | Required | Value |
 | --- | --- | --- |
 | `DATABASE_URL` | yes | complete URL of the PostgreSQL server: an external one needs `?sslmode=require`, a Render internal one has no `sslmode` and must be same-region |
-| `SECRET_KEY_BASE` | yes | 64+ bytes, e.g. `openssl rand -hex 64`; `SECRET_BASE_KEY` wins if both are set |
+| `SECRET_KEY_BASE` | yes | 64+ bytes, e.g. `openssl rand -hex 64`; remove any `SECRET_BASE_KEY`, which takes precedence when both exist |
 | `ADMIN_EMAIL` | yes, on a new database | owner sign-in email, e.g. `owner@example.com`; ignored once an owner exists |
 | `ADMIN_PASSWORD` | yes, on a new database | 16–128 characters, e.g. `openssl rand -base64 24`; ignored once an owner exists |
-| `PHX_HOST` | no | defaults to `RENDER_EXTERNAL_HOSTNAME`; set it to a custom domain after adding one |
+| `PHX_HOST` | no | **unset it**: the release falls back to `RENDER_EXTERNAL_HOSTNAME`. Only set it for a custom domain, as a bare hostname |
+| `PHX_SERVER` | no | `true` (the image already sets it) |
 | `PORT` | no | `10000` is what Render sends; must be a positive integer |
 | `POOL_SIZE` | no | `5` (defaults to `10`); must be a positive integer |
 | `JWT_SECRET` | yes | staff session digest secret; the blueprint generates it, or `openssl rand -hex 32` |
