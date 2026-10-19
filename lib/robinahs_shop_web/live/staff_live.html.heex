@@ -1,5 +1,5 @@
 <div class="site-shell">
-  <div class="topline">
+  <div class="topline staff-topline">
     <span>ROBINAH’S SHOP · STAFF WORKSPACE</span><a href={~p"/"}>← Public shop</a>
   </div>
   <main class="staff-shell">
@@ -12,7 +12,7 @@
         height="52"
       />
       <div class="brand-text">
-        <b>ROBINAH’S SHOP</b><span>Staff workspace · Mbarara · UGX</span>
+        <b>ROBINAH’S SHOP</b><span>Mbarara · UGX</span>
       </div>
       <div class="brand-tools">
         <button
@@ -41,6 +41,18 @@
     </div>
 
     <nav class="staff-tabs" aria-label="Staff tools">
+      <a href={~p"/"} class="rail-brand">
+        <img
+          src={~p"/brand/robinahs-original.jpg"}
+          alt="Robinah’s Shop logo"
+          class="rail-logo"
+          width="48"
+          height="48"
+        />
+        <span class="rail-brand-text">
+          <b>ROBINAH’S SHOP</b><small>Mbarara · UGX</small>
+        </span>
+      </a>
       <.link
         :if={@can_sale}
         patch={~p"/staff/pos"}
@@ -121,6 +133,21 @@
               aria-pressed={to_string(@category == cat)}
             >{cat}</button>
           </div>
+          <section
+            :if={@category == "All items" and @q == ""}
+            class="merch-strip"
+            aria-label="Everyday essentials"
+          >
+            <div class="merch-copy">
+              <b>Everyday essentials</b>
+              <small>Useful finds for every home.</small>
+            </div>
+            <div class="merch-thumbs">
+              <img src="/resources/household-storage.jpg" alt="" loading="lazy" />
+              <img src="/resources/kitchen-essentials.jpg" alt="" loading="lazy" />
+              <img src="/resources/school-essentials.jpg" alt="" loading="lazy" />
+            </div>
+          </section>
           <div class="products-grid two-column" id="pos-products">
             <button
               :for={p <- visible_products(@products, @category, @q)}
@@ -131,7 +158,13 @@
               aria-label={"Add #{p.name} to the sale"}
             >
               <div class="product-image">
-                <img src={p.image} alt="" loading="lazy" />
+                <%= if p.image do %>
+                  <img src={p.image} alt="" loading="lazy" />
+                <% else %>
+                  <div class="photo-fallback" role="img" aria-label={p.name}>
+                    <b>{photo_monogram(p.name)}</b><span>No photo</span>
+                  </div>
+                <% end %>
               </div>
               <div class="product-info">
                 <h3>{p.name}</h3><small class="product-sku">{p.sku}</small><.stock_badge product={
@@ -653,11 +686,13 @@
           value={@product_form[:reorder_level].value}
           placeholder="No threshold"
         /></label>
-        <label>Image<select name="product[image]"><option
-          :for={
-            file <-
-              ~w(kitchen-essentials.jpg travel-everyday-bags.jpg bedding-comfort.jpg household-storage.jpg school-essentials.jpg home-organisation.jpg)
-          }
+        <label>Photo<select name="product[image]"><option
+          value=""
+          selected={@product_form[:image].value in [nil, ""]}
+        >
+          No photo (item shown without one)
+        </option><option
+          :for={file <- image_options()}
           value={"/resources/" <> file}
           selected={"/resources/" <> file == @product_form[:image].value}
         >
@@ -838,6 +873,11 @@
       <.icon name="lock" size={16} /><span>Server confirmation required · staff actions are authorised on the server</span>
     </div>
   </main>
+
+  <footer class="staff-footer" aria-label="Shop footer">
+    <span>ROBINAH’S SHOP · Staff workspace · Mbarara · UGX</span>
+    <a href={~p"/"} class="footer-shop-link">Public shop →</a>
+  </footer>
 
   <div :if={@more_open} class="sheet-backdrop" phx-click="more-toggle" aria-hidden="true"></div>
   <div

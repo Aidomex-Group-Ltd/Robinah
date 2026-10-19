@@ -8,12 +8,12 @@ defmodule RobinahsShopWeb.LiveFlowsTest do
   test "public search and enquiry basket work through LiveView" do
     Shop.seed_catalogue()
     {:ok, view, _} = live(build_conn(), "/")
-    view |> form("#catalogue-search", %{q: "Travel"}) |> render_change()
-    assert has_element?(view, "#catalogue-products .product-card", "Travel and everyday bags")
-    refute has_element?(view, "#catalogue-products .product-card", "School essentials")
+    view |> form("#catalogue-search", %{q: "Torch"}) |> render_change()
+    assert has_element?(view, "#catalogue-products .product-card", "Torch")
+    refute has_element?(view, "#catalogue-products .product-card", "Ruler")
     view |> element(".product-bottom button", "Add to enquiry") |> render_click()
     view |> element(".basket-button") |> render_click()
-    assert has_element?(view, ".basket-drawer .basket-line", "Travel and everyday bags")
+    assert has_element?(view, ".basket-drawer .basket-line", "Torch")
     assert has_element?(view, ".basket-drawer a[href*=\"wa.me\"]")
   end
 

@@ -394,4 +394,17 @@ defmodule RobinahsShopWeb.StaffLive do
 
   def pad(number) when number < 10, do: "0#{number}"
   def pad(number), do: to_string(number)
+
+  @doc """
+  Product photographs available on disk, excluding brand artwork and the
+  hashed copies produced by `mix phx.digest`.
+  """
+  def image_options do
+    Path.join([:code.priv_dir(:robinahs_shop), "static", "resources"])
+    |> File.ls!()
+    |> Enum.filter(&Regex.match?(~r/^[a-zA-Z0-9_-]+\.(jpg|jpeg|png)$/, &1))
+    |> Enum.reject(&String.starts_with?(&1, "robinahs-"))
+    |> Enum.reject(&Regex.match?(~r/-[0-9a-f]{32}\.(jpg|jpeg|png)$/, &1))
+    |> Enum.sort()
+  end
 end

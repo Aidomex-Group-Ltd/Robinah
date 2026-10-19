@@ -124,9 +124,51 @@ defmodule RobinahsShop.ShopTest do
   test "catalogue seeding is repeatable without replacing configured prices", %{owner: owner} do
     Shop.seed_catalogue()
     Shop.seed_catalogue()
-    demo = Repo.get_by!(Product, sku: "DEMO-KIT-001")
-    {:ok, _} = Shop.save_product(owner, demo.id, %{"price" => 15_000})
+
+    item = Repo.get_by!(Product, sku: "RSH-001")
+    {:ok, _} = Shop.save_product(owner, item.id, %{"price" => 15_000})
     Shop.seed_catalogue()
-    assert Repo.get!(Product, demo.id).price == 15_000
+    assert Repo.get!(Product, item.id).price == 15_000
+  end
+
+  test "every handwritten row becomes a product with its own photo and no set price" do
+    Shop.seed_catalogue()
+
+    products =
+      for number <- 1..Catalogue.count(), do: Repo.get_by!(Product, sku: Catalogue.sku(number))
+
+    assert length(products) == 36
+    assert Enum.all?(products, &(&1.price == 0))
+
+    images = Enum.map(products, & &1.image)
+
+    assert Enum.all?(images, fn
+             nil -> true
+             path -> String.starts_with?(path, "/resources/item-")
+           end)
+
+    photos = Enum.reject(images, &is_nil/1)
+    assert photos != []
+    assert length(Enum.uniq(photos)) == length(photos)
+
+    retired = Repo.all(from p in Product, where: fragment("upper(?) LIKE 'DEMO-%'", p.sku))
+    assert Enum.all?(retired, &(&1.active == false))
+  end
+
+  test "rows outside the catalogue are retired when they repeat a note row with a placeholder photo",
+       %{
+         owner: owner
+       } do
+    placeholder = product_fixture(owner, %{"name" => "Torch", "sku" => "OLD-TORCH"})
+    other_name = product_fixture(owner, %{"name" => "Waffle iron"})
+
+    own_photo =
+      product_fixture(owner, %{"name" => "Torch", "image" => "/resources/item-06-torch.jpg"})
+
+    Shop.seed_catalogue()
+
+    refute Repo.get!(Product, placeholder.id).active
+    assert Repo.get!(Product, other_name.id).active
+    assert Repo.get!(Product, own_photo.id).active
   end
 end

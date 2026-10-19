@@ -129,7 +129,14 @@
           id={"product-#{product.id}"}
         >
           <div class="product-photo">
-            <img src={product.image} alt={product.name} loading="lazy" /><span class="sample-tag">CATEGORY IMAGE</span><button
+            <%= if product.image do %>
+              <img src={product.image} alt={product.name} loading="lazy" />
+            <% else %>
+              <div class="photo-fallback" role="img" aria-label={product.name}>
+                <b>{photo_monogram(product.name)}</b><span>No photo yet</span>
+              </div>
+            <% end %>
+            <button
               aria-label={"Add #{product.name} to enquiry"}
               class="add-product"
               phx-click="add"

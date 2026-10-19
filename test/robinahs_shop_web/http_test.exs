@@ -9,10 +9,19 @@ defmodule RobinahsShopWeb.HTTPTest do
     assert html =~ "robinahs-shop-photo.jpg"
     assert html =~ "wa.me/256774843183"
 
-    assert html
-           |> Floki.parse_document!()
-           |> Floki.find("#catalogue-products .product-card")
-           |> length() == 6
+    cards =
+      html
+      |> Floki.parse_document!()
+      |> Floki.find("#catalogue-products .product-card")
+
+    assert length(cards) == 36
+
+    photos = cards |> Enum.flat_map(&Floki.find(&1, ".product-photo img"))
+    assert length(photos) == 36
+
+    sources = photos |> Enum.flat_map(&Floki.attribute(&1, "src"))
+    assert length(Enum.uniq(sources)) == length(sources)
+    assert Enum.all?(sources, &String.starts_with?(&1, "/resources/item-"))
   end
 
   test "launch screen has a no-JavaScript dismissal fallback" do

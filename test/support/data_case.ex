@@ -3,7 +3,8 @@ defmodule RobinahsShop.DataCase do
 
   using do
     quote do
-      alias RobinahsShop.{Accounts, Shop, Repo, Product, Sale, Receiving}
+      alias RobinahsShop.{Accounts, Shop, Repo, Catalogue, Product, Sale, Receiving}
+      import Ecto.Query
       import RobinahsShop.DataCase
     end
   end

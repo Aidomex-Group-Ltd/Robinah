@@ -1,6 +1,6 @@
 defmodule RobinahsShop.Shop do
   import Ecto.Query
-  alias RobinahsShop.{Repo, Accounts, Product, Sale, SaleItem, Receiving}
+  alias RobinahsShop.{Repo, Accounts, Catalogue, Product, Sale, SaleItem, Receiving}
 
   @categories [
     "Home & Kitchen",
@@ -342,34 +342,88 @@ defmodule RobinahsShop.Shop do
   end
 
   def seed_catalogue do
-    items = [
-      {"DEMO-KIT-001", "Everyday kitchen essentials", "Home & Kitchen", "kitchen-essentials.jpg",
-       "set"},
-      {"DEMO-BAG-001", "Travel and everyday bags", "Bags & Travel", "travel-everyday-bags.jpg",
-       "piece"},
-      {"DEMO-BED-001", "Bedding and comfort", "Bedding & Comfort", "bedding-comfort.jpg", "set"},
-      {"DEMO-HOM-001", "Storage and household basics", "Household Plastics & Storage",
-       "household-storage.jpg", "piece"},
-      {"DEMO-SCH-001", "School essentials", "School Essentials", "school-essentials.jpg",
-       "piece"},
-      {"DEMO-ORG-001", "Home organisation", "Household Plastics & Storage",
-       "home-organisation.jpg", "piece"}
-    ]
+    Enum.each(Catalogue.items(), fn {number, name, category, unit, image} ->
+      sku = Catalogue.sku(number)
 
-    Enum.each(items, fn {sku, name, category, image, unit} ->
-      unless Repo.get_by(Product, sku: sku),
-        do:
+      case Repo.get_by(Product, sku: sku) do
+        nil ->
           Repo.insert!(
             Product.changeset(%Product{}, %{
               sku: sku,
               name: name,
               category: category,
-              image: "/resources/" <> image,
               unit: unit,
+              image: resource_image(image),
               price: 0
             })
           )
+
+        %Product{image: nil} = product ->
+          # Backfill the item photo only when it is still missing so a
+          # manager's own choice is never overwritten.
+          product |> Ecto.Changeset.change(image: resource_image(image)) |> Repo.update!()
+
+        _ ->
+          :ok
+      end
     end)
+
+    # Retire the old placeholder rows: their category photos already illustrate
+    # the collection tiles, so keeping them would show the same picture twice.
+    Repo.update_all(
+      from(p in Product, where: fragment("upper(?) LIKE 'DEMO-%'", p.sku)),
+      set: [active: false, updated_at: DateTime.utc_now()]
+    )
+
+    retire_note_duplicates()
+  end
+
+  # Earlier deployments created extra rows from the same note using a shared
+  # category photo, so one placeholder picture appeared on many cards. Rows
+  # outside the catalogue that repeat a note row's name while still carrying a
+  # shared placeholder photo are retired; their history stays intact.
+  defp retire_note_duplicates do
+    note_names = Enum.map(Catalogue.items(), fn {_, name, _, _, _} -> normalize_name(name) end)
+
+    from(p in Product, where: p.active and not like(p.sku, "RSH-%"))
+    |> Repo.all()
+    |> Enum.filter(fn product ->
+      product.image in placeholder_images() and
+        duplicates_note?(normalize_name(product.name), note_names)
+    end)
+    |> Enum.each(fn product ->
+      product |> Ecto.Changeset.change(active: false) |> Repo.update!()
+    end)
+  end
+
+  defp duplicates_note?(name, note_names) do
+    Enum.any?(note_names, fn note ->
+      cond do
+        note == name -> true
+        byte_size(name) >= 8 -> String.starts_with?(note, name) or String.starts_with?(name, note)
+        true -> false
+      end
+    end)
+  end
+
+  defp normalize_name(name) do
+    name |> String.downcase() |> String.replace(~r/[^a-z0-9]+/, " ") |> String.trim()
+  end
+
+  defp placeholder_images do
+    # Placeholder photos are the category pictures used by the collection
+    # tiles; they are never a product's own photograph.
+    Enum.map(
+      ~w(kitchen-essentials.jpg travel-everyday-bags.jpg bedding-comfort.jpg household-storage.jpg school-essentials.jpg home-organisation.jpg),
+      &"/resources/#{&1}"
+    )
+  end
+
+  defp resource_image(nil), do: nil
+
+  defp resource_image(file) do
+    path = Path.join([:code.priv_dir(:robinahs_shop), "static", "resources", file])
+    if File.exists?(path), do: "/resources/" <> file, else: nil
   end
 
   def error_message(%Ecto.Changeset{} = cs) do

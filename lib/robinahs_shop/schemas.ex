@@ -46,7 +46,7 @@ defmodule RobinahsShop.Product do
     field :price, :integer, default: 0
     field :stock, :integer, default: 0
     field :unit, :string, default: "piece"
-    field :image, :string, default: "/resources/kitchen-essentials.jpg"
+    field :image, :string
     field :reorder_level, :integer
     field :active, :boolean, default: true
     timestamps(type: :utc_datetime_usec)
@@ -56,7 +56,11 @@ defmodule RobinahsShop.Product do
     product
     |> cast(attrs, [:sku, :name, :category, :price, :unit, :image, :reorder_level, :active])
     |> update_change(:sku, &String.upcase(String.trim(&1)))
-    |> validate_required([:sku, :name, :category, :price, :unit, :image])
+    |> update_change(:image, fn
+      "" -> nil
+      value -> String.trim(value)
+    end)
+    |> validate_required([:sku, :name, :category, :price, :unit])
     |> validate_length(:sku, min: 1, max: 80)
     |> validate_length(:name, min: 1, max: 160)
     |> validate_length(:unit, min: 1, max: 40)

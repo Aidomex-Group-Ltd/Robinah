@@ -1,5 +1,25 @@
 defmodule RobinahsShopWeb.Components do
   use Phoenix.Component
+
+  @doc """
+  Two-letter monogram used where a product has no photograph of its own.
+  Products without a photo are never given another item's picture.
+  """
+  def photo_monogram(name) when is_binary(name) do
+    name
+    |> String.split(~r/\s+/, trim: true)
+    |> Enum.take(2)
+    |> Enum.map_join("", fn word ->
+      word |> String.replace(~r/[^\p{L}\p{N}]/u, "") |> String.first() || ""
+    end)
+    |> String.upcase()
+    |> case do
+      "" -> "?"
+      monogram -> monogram
+    end
+  end
+
+  def photo_monogram(_), do: "?"
   def money(nil), do: money(0)
 
   def money(value) do
