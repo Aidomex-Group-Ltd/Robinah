@@ -19,7 +19,8 @@ defmodule RobinahsShopWeb.Endpoint do
     at: "/",
     from: :robinahs_shop,
     gzip: true,
-    only: RobinahsShopWeb.static_paths()
+    only: RobinahsShopWeb.static_paths(),
+    only_matching: ~w(favicon robots site)
 
   plug Plug.RequestId
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
