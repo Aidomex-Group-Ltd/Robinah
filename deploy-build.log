@@ -1,39 +1,256 @@
  Image robinahs-shop:local Building 
 #1 [internal] load local bake definitions
-#1 reading from stdin 508B 0.0s done
+#1 reading from stdin 508B done
 #1 DONE 0.0s
 
 #2 [internal] load build definition from Dockerfile
+#2 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
 #2 transferring dockerfile:
-#2 transferring dockerfile: 1.40kB 0.1s done
-#2 DONE 0.5s
+#2 transferring dockerfile: 1.73kB 1.8s done
+#2 DONE 3.6s
 
-#3 [internal] load metadata for docker.io/library/elixir:1.19-slim
-#3 DONE 5.8s
+#3 [internal] load metadata for docker.io/library/elixir@sha256:d170fadffd75b36146ff40b6e8d5cc881c59d136ae5a2c34a1b394ec33b6cffa
+#3 ...
 
-#4 [internal] load .dockerignore
-#4 transferring context:
-#4 transferring context: 118B 0.1s done
-#4 DONE 0.2s
+#4 [internal] load metadata for docker.io/library/elixir@sha256:5ac9237ec0de4af06336b31cb54e232c76f16bcda53dbd509f567a44f6d6e8af
+#4 DONE 29.8s
 
-#5 [builder  1/12] FROM docker.io/library/elixir:1.19-slim@sha256:5ac9237ec0de4af06336b31cb54e232c76f16bcda53dbd509f567a44f6d6e8af
-#5 ...
+#3 [internal] load metadata for docker.io/library/elixir@sha256:d170fadffd75b36146ff40b6e8d5cc881c59d136ae5a2c34a1b394ec33b6cffa
+#3 DONE 29.8s
 
-#6 [internal] load build context
-#6 DONE 0.0s
-
-#5 [builder  1/12] FROM docker.io/library/elixir:1.19-slim@sha256:5ac9237ec0de4af06336b31cb54e232c76f16bcda53dbd509f567a44f6d6e8af
-#5 resolve docker.io/library/elixir:1.19-slim@sha256:5ac9237ec0de4af06336b31cb54e232c76f16bcda53dbd509f567a44f6d6e8af 0.1s done
-#5 CACHED
-
-#7 [runner 2/6] RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl libstdc++6 openssl && rm -rf /var/lib/apt/lists/*     && groupadd --gid 10001 shop && useradd --uid 10001 --gid shop --home-dir /app --no-create-home shop     && mkdir -p /app /data && chown -R shop:shop /app /data
-#7 CACHED
-
-#8 [runner 3/6] WORKDIR /app
-#8 CACHED
+#5 [internal] load .dockerignore
+#5 transferring context:
+#5 transferring context: 118B 0.6s done
+#5 DONE 4.3s
 
 #6 [internal] load build context
-#6 transferring context: 4.18MB 1.5s done
-#6 DONE 4.7s
+#6 DONE 0.8s
 
-#9 [builder  2/12] RUN apt-get update && apt-get install -y --no-install-recommends build-essential git ca-certificates && rm -rf /var/lib/apt/lists/*
+#7 [runner 1/6] FROM docker.io/library/elixir@sha256:5ac9237ec0de4af06336b31cb54e232c76f16bcda53dbd509f567a44f6d6e8af
+#7 ...
+
+#8 [builder  1/10] FROM docker.io/library/elixir@sha256:d170fadffd75b36146ff40b6e8d5cc881c59d136ae5a2c34a1b394ec33b6cffa
+#8 ...
+
+#7 [runner 1/6] FROM docker.io/library/elixir@sha256:5ac9237ec0de4af06336b31cb54e232c76f16bcda53dbd509f567a44f6d6e8af
+#7 resolve docker.io/library/elixir@sha256:5ac9237ec0de4af06336b31cb54e232c76f16bcda53dbd509f567a44f6d6e8af
+#7 ...
+
+#8 [builder  1/10] FROM docker.io/library/elixir@sha256:d170fadffd75b36146ff40b6e8d5cc881c59d136ae5a2c34a1b394ec33b6cffa
+#8 resolve docker.io/library/elixir@sha256:d170fadffd75b36146ff40b6e8d5cc881c59d136ae5a2c34a1b394ec33b6cffa
+#8 ...
+
+#7 [runner 1/6] FROM docker.io/library/elixir@sha256:5ac9237ec0de4af06336b31cb54e232c76f16bcda53dbd509f567a44f6d6e8af
+#7 resolve docker.io/library/elixir@sha256:5ac9237ec0de4af06336b31cb54e232c76f16bcda53dbd509f567a44f6d6e8af 82.4s done
+#7 DONE 106.9s
+
+#8 [builder  1/10] FROM docker.io/library/elixir@sha256:d170fadffd75b36146ff40b6e8d5cc881c59d136ae5a2c34a1b394ec33b6cffa
+#8 resolve docker.io/library/elixir@sha256:d170fadffd75b36146ff40b6e8d5cc881c59d136ae5a2c34a1b394ec33b6cffa 74.6s done
+#8 DONE 107.9s
+
+#9 [runner 2/6] RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl libstdc++6 openssl && rm -rf /var/lib/apt/lists/*     && groupadd --gid 10001 shop && useradd --uid 10001 --gid shop --home-dir /app --no-create-home shop     && mkdir -p /app /data && chown -R shop:shop /app /data
+#9 CACHED
+
+#10 [runner 3/6] WORKDIR /app
+#10 CACHED
+
+#6 [internal] load build context
+#6 transferring context:
+#6 transferring context: 7.09kB 2.6s done
+#6 DONE 5.2s
+
+#11 [builder  3/10] COPY mix.exs mix.lock ./
+#11 CACHED
+
+#12 [builder  2/10] WORKDIR /build
+#12 CACHED
+
+#13 [builder  4/10] COPY config/config.exs config/prod.exs config/
+#13 CACHED
+
+#14 [builder  5/10] RUN mix deps.get --only prod && mix deps.compile
+#14 22.67 * creating /root/.mix/archives/hex-2.5.3
+#14 35.61 Resolving Hex dependencies...
+#14 37.14 Resolution completed in 2.622s
+#14 37.17 Unchanged:
+#14 37.17   bandit 1.13.1
+#14 37.29   db_connection 2.10.2
+#14 37.31   decimal 3.2.0
+#14 37.32   ecto 3.14.2
+#14 37.32   ecto_sql 3.14.0
+#14 37.32   hpax 1.1.0
+#14 37.32   jason 1.4.5
+#14 37.32   mime 2.0.7
+#14 37.33   phoenix 1.8.15
+#14 37.34   phoenix_ecto 4.7.0
+#14 37.34   phoenix_html 4.3.0
+#14 37.34   phoenix_live_view 1.2.12
+#14 37.34   phoenix_pubsub 2.4.1
+#14 37.35   phoenix_template 1.1.0
+#14 37.35   plug 1.20.3
+#14 37.35   plug_crypto 2.2.0
+#14 37.35   postgrex 0.22.4
+#14 37.35   telemetry 1.4.2
+#14 37.35   thousand_island 1.6.0
+#14 37.35   websock 0.5.3
+#14 37.35   websock_adapter 0.6.0
+#14 37.54 * Getting phoenix (Hex package)
+#14 47.44 * Getting phoenix_live_view (Hex package)
+#14 60.65 * Getting phoenix_html (Hex package)
+#14 77.28 * Getting phoenix_ecto (Hex package)
+#14 79.44 * Getting ecto_sql (Hex package)
+#14 146.6 * Getting postgrex (Hex package)
+#14 151.1 * Getting bandit (Hex package)
+#14 155.1 * Getting jason (Hex package)
+#14 155.1 * Getting hpax (Hex package)
+#14 155.1 * Getting plug (Hex package)
+#14 155.1 * Getting telemetry (Hex package)
+#14 201.6 * creating /root/.mix/elixir/1-19-otp-28/rebar3
+#14 201.6 * Getting thousand_island (Hex package)
+#14 211.1 * Getting websock (Hex package)
+#14 211.1 * Getting mime (Hex package)
+#14 211.1 * Getting plug_crypto (Hex package)
+#14 211.1 * Getting db_connection (Hex package)
+#14 211.7 * Getting decimal (Hex package)
+#14 212.3 * Getting ecto (Hex package)
+#14 213.1 * Getting phoenix_template (Hex package)
+#14 213.1 * Getting phoenix_pubsub (Hex package)
+#14 213.4 * Getting websock_adapter (Hex package)
+#14 350.9 ==> mime
+#14 350.9 Compiling 1 file (.ex)
+#14 359.2 Generated mime app
+#14 363.0 ==> plug_crypto
+#14 363.0 Compiling 5 files (.ex)
+#14 365.8 Generated plug_crypto app
+#14 367.6 ==> hpax
+#14 367.6 Compiling 4 files (.ex)
+#14 369.3 Generated hpax app
+#14 369.8 ==> decimal
+#14 369.8 Compiling 4 files (.ex)
+#14 374.3 Generated decimal app
+#14 374.7 ==> jason
+#14 374.7 Compiling 10 files (.ex)
+#14 386.0 Generated jason app
+#14 398.9 ==> robinahs_shop
+#14 398.9 ===> Analyzing applications...
+#14 399.4 ===> Compiling telemetry
+#14 418.8 ==> thousand_island
+#14 418.8 Compiling 18 files (.ex)
+#14 426.0 Generated thousand_island app
+#14 429.1 ==> db_connection
+#14 429.1 Compiling 18 files (.ex)
+#14 434.9 Generated db_connection app
+#14 438.6 ==> ecto
+#14 438.6 Compiling 56 files (.ex)
+#14 472.0 Generated ecto app
+#14 472.5 ==> phoenix_html
+#14 472.5 Compiling 6 files (.ex)
+#14 477.0 Generated phoenix_html app
+#14 477.9 ==> phoenix_template
+#14 477.9 Compiling 4 files (.ex)
+#14 482.4 Generated phoenix_template app
+#14 483.3 ==> phoenix_pubsub
+#14 483.3 Compiling 13 files (.ex)
+#14 486.3 Generated phoenix_pubsub app
+#14 487.6 ==> plug
+#14 487.6 Compiling 1 file (.erl)
+#14 490.1 Compiling 42 files (.ex)
+#14 510.0 Generated plug app
+#14 512.1 ==> postgrex
+#14 512.1 Compiling 70 files (.ex)
+#14 538.9 Compiling lib/postgrex/default_types.ex (it's taking more than 10s)
+#14 551.2 Generated postgrex app
+#14 560.7 ==> phoenix_ecto
+#14 560.7 Compiling 7 files (.ex)
+#14 568.7 Generated phoenix_ecto app
+#14 571.1 ==> ecto_sql
+#14 571.1 Compiling 25 files (.ex)
+#14 585.7 Generated ecto_sql app
+#14 586.0 ==> websock
+#14 586.0 Compiling 1 file (.ex)
+#14 586.2 Generated websock app
+#14 586.8 ==> bandit
+#14 586.8 Compiling 54 files (.ex)
+#14 598.8 Generated bandit app
+#14 600.2 ==> websock_adapter
+#14 600.2 Compiling 4 files (.ex)
+#14 601.0 Generated websock_adapter app
+#14 602.4 ==> phoenix
+#14 602.4 Compiling 75 files (.ex)
+#14 621.0 Generated phoenix app
+#14 623.4 ==> phoenix_live_view
+#14 623.4 Compiling 55 files (.ex)
+#14 647.2 Compiling lib/phoenix_live_view/engine.ex (it's taking more than 10s)
+#14 667.9 Compiling lib/phoenix_component.ex (it's taking more than 10s)
+#14 712.1 Generated phoenix_live_view app
+#14 DONE 729.6s
+
+#15 [builder  6/10] COPY lib lib
+#15 DONE 22.9s
+
+#16 [builder  7/10] COPY priv priv
+#16 DONE 5.2s
+
+#17 [builder  8/10] COPY assets assets
+#17 DONE 1.4s
+
+#18 [builder  9/10] COPY config/runtime.exs config/runtime.exs
+#18 DONE 0.9s
+
+#19 [builder 10/10] RUN mix compile && mix assets.deploy && mix release
+#19 149.8 Compiling 20 files (.ex)
+#19 622.4 Generated robinahs_shop app
+#19 724.2 Check your digested files at "priv/static"
+#19 855.2 * assembling robinahs_shop-0.1.0 on MIX_ENV=prod
+#19 856.5 * using config/runtime.exs to configure the release at runtime
+#19 884.6 * skipping elixir.bat for windows (bin/elixir.bat not found in the Elixir installation)
+#19 884.6 * skipping iex.bat for windows (bin/iex.bat not found in the Elixir installation)
+#19 919.6 
+#19 919.6 Release created at _build/prod/rel/robinahs_shop
+#19 919.6 
+#19 919.6     # To start your system
+#19 919.6     _build/prod/rel/robinahs_shop/bin/robinahs_shop start
+#19 919.6 
+#19 919.6 Once the release is running:
+#19 919.6 
+#19 919.6     # To connect to it remotely
+#19 919.6     _build/prod/rel/robinahs_shop/bin/robinahs_shop remote
+#19 919.6 
+#19 919.6     # To stop it gracefully (you may also send SIGINT/SIGTERM)
+#19 919.6     _build/prod/rel/robinahs_shop/bin/robinahs_shop stop
+#19 919.6 
+#19 919.6 To list all commands:
+#19 919.6 
+#19 919.6     _build/prod/rel/robinahs_shop/bin/robinahs_shop
+#19 919.6 
+#19 DONE 920.2s
+
+#20 [runner 4/6] COPY --from=builder --chown=shop:shop /build/_build/prod/rel/robinahs_shop ./
+#20 DONE 22.1s
+
+#21 [runner 5/6] COPY --chown=shop:shop scripts/docker-entrypoint.sh /app/entrypoint.sh
+#21 DONE 3.6s
+
+#22 [runner 6/6] RUN chmod +x /app/entrypoint.sh
+#22 DONE 3.2s
+
+#23 exporting to image
+#23 exporting layers
+#23 exporting layers 64.0s done
+#23 exporting manifest sha256:a1e869069627d8af02883a4670ddde640d466936056b25b12721ef8af6a39660 0.2s done
+#23 exporting config sha256:e9be1a087e0d34122a187ba92cc95c2e4ab880eb20754832536766dd6d826690 0.1s done
+#23 exporting attestation manifest sha256:ca8f77e54e16eefe6583d2d7fb7a39f1cfd4c0ce59ec79372ead891d08841f8a
+#23 exporting attestation manifest sha256:ca8f77e54e16eefe6583d2d7fb7a39f1cfd4c0ce59ec79372ead891d08841f8a 0.2s done
+#23 exporting manifest list sha256:65507c209f295c2e8b37226092815525ad39194df36365a0e45f2abc7ea9f98d 0.1s done
+#23 naming to docker.io/library/robinahs-shop:local
+#23 naming to docker.io/library/robinahs-shop:local 0.1s done
+#23 unpacking to docker.io/library/robinahs-shop:local
+#23 unpacking to docker.io/library/robinahs-shop:local 244.4s done
+#23 DONE 317.8s
+
+#24 resolving provenance for metadata file
+#24 DONE 5.1s
+ Image robinahs-shop:local Built 
+BUILD_EXIT=0

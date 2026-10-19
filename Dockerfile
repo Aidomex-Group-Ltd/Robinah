@@ -1,10 +1,13 @@
 # Build and run on the same Linux/OTP base; the database is PostgreSQL.
-ARG ELIXIR_IMAGE=elixir:1.19-slim
-FROM ${ELIXIR_IMAGE} AS builder
-RUN apt-get update && apt-get install -y --no-install-recommends build-essential git ca-certificates && rm -rf /var/lib/apt/lists/*
+# builder: the full Elixir image (already ships build-essential, git, ca-certificates)
+# runner:  slim image with only the runtime essentials installed
+# Pinned by digest so the build resolves base images locally without a registry lookup
+ARG BUILDER_IMAGE=elixir@sha256:d170fadffd75b36146ff40b6e8d5cc881c59d136ae5a2c34a1b394ec33b6cffa # elixir:1.19.5
+ARG RUNNER_IMAGE=elixir@sha256:5ac9237ec0de4af06336b31cb54e232c76f16bcda53dbd509f567a44f6d6e8af # elixir:1.19-slim
+FROM ${BUILDER_IMAGE} AS builder
 WORKDIR /build
 ENV MIX_ENV=prod
-RUN mix local.hex --force && mix local.rebar --force
+# hex + rebar ship preinstalled in the full elixir image; avoid re-downloading them
 COPY mix.exs mix.lock ./
 COPY config/config.exs config/prod.exs config/
 RUN mix deps.get --only prod && mix deps.compile
@@ -14,7 +17,7 @@ COPY assets assets
 COPY config/runtime.exs config/runtime.exs
 RUN mix compile && mix assets.deploy && mix release
 
-FROM ${ELIXIR_IMAGE} AS runner
+FROM ${RUNNER_IMAGE} AS runner
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl libstdc++6 openssl && rm -rf /var/lib/apt/lists/* \
     && groupadd --gid 10001 shop && useradd --uid 10001 --gid shop --home-dir /app --no-create-home shop \
     && mkdir -p /app /data && chown -R shop:shop /app /data
