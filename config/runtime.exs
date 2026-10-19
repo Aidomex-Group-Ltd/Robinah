@@ -55,6 +55,36 @@ signing_salt = read_env.("LIVE_SIGNING_SALT")
 session_secret = read_env.("JWT_SECRET")
 database_url = read_env.("DATABASE_URL")
 
+# libpq `sslmode` semantics, translated into the `:ssl` option Postgrex
+# understands — Ecto copies an unknown `sslmode=require` query parameter
+# through as a plain option and Postgrex never reads it, so without this
+# translation a TLS-only server would be contacted in the clear. This runs in
+# every environment, because `DATABASE_URL` may point at a TLS-only server in
+# development too.
+#   no sslmode      → plain TCP (Render's internal/private-network URL)
+#   sslmode=require → TLS, encrypts without verifying the certificate
+#   sslmode=verify-*→ TLS against the OS CA store, including hostname check
+repo_ssl =
+  cond do
+    is_nil(database_url) ->
+      false
+
+    String.contains?(database_url, "sslmode=verify") ->
+      true
+
+    String.contains?(database_url, "sslmode=disable") ->
+      false
+
+    String.contains?(database_url, "sslmode=require") ->
+      [verify: :verify_none]
+
+    System.get_env("PG_SSL") in ["true", "1"] ->
+      [verify: :verify_none]
+
+    true ->
+      false
+  end
+
 if secret do
   config :robinahs_shop, RobinahsShopWeb.Endpoint, secret_key_base: secret
 end
@@ -72,7 +102,7 @@ end
 # tests always stay on their own database.
 if config_env() == :dev and database_url do
   if String.contains?(database_url, "://") do
-    config :robinahs_shop, RobinahsShop.Repo, url: database_url
+    config :robinahs_shop, RobinahsShop.Repo, url: database_url, ssl: repo_ssl
   else
     config :robinahs_shop, RobinahsShop.Repo, database: database_url
   end
@@ -158,17 +188,53 @@ if config_env() == :prod do
         nil
     end
 
+  # A URL Ecto can parse: postgres scheme, a host and a database name. Ecto
+  # itself raises `Ecto.InvalidURLError` only after boot has started, so the
+  # same shape is checked here to produce one readable message.
+  database_shape_ok? =
+    not is_nil(database_url) and
+      (String.starts_with?(database_url, "postgres://") or
+         String.starts_with?(database_url, "postgresql://")) and
+      case URI.parse(database_url) do
+        %URI{host: db_host, path: db_path} ->
+          is_binary(db_host) and db_host != "" and is_binary(db_path) and db_path not in ["", "/"]
+
+        _ ->
+          false
+      end
+
+  # POOL_SIZE and PORT used to reach String.to_integer/1 with whatever was in
+  # the Environment tab; an empty or non-numeric value crashed with a bare
+  # FunctionClauseError. Parse both once and report the offending value.
+  parse_positive_int = fn name, default ->
+    raw = System.get_env(name, default) |> String.trim()
+
+    case Integer.parse(raw) do
+      {int, ""} when int > 0 ->
+        {int, nil}
+
+      _ ->
+        {String.to_integer(default),
+         "#{name} must be a positive integer (it is #{inspect(raw)})."}
+    end
+  end
+
+  {pool_size, pool_problem} = parse_positive_int.("POOL_SIZE", "10")
+  {http_port, port_problem} = parse_positive_int.("PORT", "4000")
+
   problems =
     []
     |> add_problem.(
       is_nil(database_url),
-      "DATABASE_URL is not set. Link the Render Postgres instance (Environment → Add from database) or paste its connection string."
+      "DATABASE_URL is not set. Set it in Environment → Add from database (Render's " <>
+        "internal URL) or paste the complete URL of your PostgreSQL server."
     )
     |> add_problem.(
-      database_url != nil and not String.starts_with?(database_url, "postgres://") and
-        not String.starts_with?(database_url, "postgresql://"),
+      database_url != nil and not database_shape_ok?,
       "DATABASE_URL must be a complete postgresql://user:password@host:5432/database URL. " <>
-        "In Render use the linked database's Internal Database URL (render.yaml wires it with fromDatabase connectionString)."
+        "A server outside Render (for example an Aiven instance) needs ?sslmode=require; " <>
+        "a Render internal URL is postgresql://user:pass@host.render.internal:5432/database " <>
+        "and only resolves when the database is in the same region as this service."
     )
     |> then(fn problems ->
       if secret_problem, do: problems ++ [secret_problem], else: problems
@@ -183,6 +249,8 @@ if config_env() == :prod do
       "LIVE_SIGNING_SALT is not set. Generate one with: openssl rand -hex 16 " <>
         "(Render's blueprint generates it automatically)."
     )
+    |> add_problem.(pool_problem != nil, pool_problem)
+    |> add_problem.(port_problem != nil, port_problem)
 
   if problems != [] do
     raise """
@@ -191,36 +259,25 @@ if config_env() == :prod do
     #{Enum.map_join(problems, "\n", &("  - " <> &1))}
 
     Required: DATABASE_URL, SECRET_KEY_BASE (or SECRET_BASE_KEY), JWT_SECRET,
-    LIVE_SIGNING_SALT, ADMIN_EMAIL, ADMIN_PASSWORD.
+    LIVE_SIGNING_SALT. On a database without an owner yet: ADMIN_EMAIL,
+    ADMIN_PASSWORD (checked by the release before the account is created).
     Optional: PHX_HOST (defaults to RENDER_EXTERNAL_HOSTNAME), PORT, POOL_SIZE,
     ERL_FLAGS.
     """
   end
 
-  # libpq sslmode semantics. Render's blueprint supplies the private-network
-  # URL (no sslmode) which needs no TLS; the external URL requires
-  # `sslmode=require`, which encrypts without verifying the certificate.
-  # `verify-ca`/`verify-full` validate the chain against the OS CA store.
-  repo_ssl =
-    cond do
-      String.contains?(database_url, "sslmode=verify") -> true
-      String.contains?(database_url, "sslmode=disable") -> false
-      String.contains?(database_url, "sslmode=require") -> [verify: :verify_none]
-      System.get_env("PG_SSL") in ["true", "1"] -> [verify: :verify_none]
-      true -> false
-    end
-
-  # Production always connects with the complete URL validated above, so the
-  # service and the database only need to share Render's private network
-  # (same region) for the internal hostname to resolve.
+  # Production always connects with the complete URL validated above: an
+  # external server over the internet (sslmode=require) or a Render internal
+  # URL, which only resolves when the database is in the same region as this
+  # service.
   config :robinahs_shop, RobinahsShop.Repo,
     url: database_url,
-    pool_size: String.to_integer(System.get_env("POOL_SIZE", "10")),
+    pool_size: pool_size,
     ssl: repo_ssl
 
   config :robinahs_shop, RobinahsShopWeb.Endpoint,
     server: System.get_env("PHX_SERVER") in ["true", "1"],
     url: [host: host, scheme: "https", port: 443],
-    http: [ip: {0, 0, 0, 0}, port: String.to_integer(System.get_env("PORT", "4000"))],
+    http: [ip: {0, 0, 0, 0}, port: http_port],
     check_origin: ["https://#{host}"]
 end

@@ -88,34 +88,40 @@ If Caddy was enabled, also use the edge deployment option for later updates. The
 
 ## Deploy to Render (Dockerised release)
 
-The repository ships a `render.yaml` blueprint: a Docker web service built from the root `Dockerfile` plus a managed Postgres instance. The container runs the OTP release; `scripts/docker-entrypoint.sh` applies migrations, seeds the 36 catalogue rows and bootstraps the owner before `bin/robinahs_shop start`.
+The repository ships a `render.yaml` blueprint: a Docker web service built from the root `Dockerfile`, plus an external PostgreSQL server (the blueprint provisions no database of its own). The container runs the OTP release; `scripts/docker-entrypoint.sh` applies migrations, seeds the 36 catalogue rows and bootstraps the owner before `bin/robinahs_shop start`.
 
 1. Generate the secrets first: `bash scripts/init-env.sh` (or `openssl rand -hex 64` for `SECRET_KEY_BASE`, a random password of 16+ characters for `ADMIN_PASSWORD`).
 2. Render Dashboard → **New → Blueprint** → connect `Aidomex-Group-Ltd/Robinah` → keep the root directory `/` and confirm `render.yaml`.
-3. On first sync, fill the prompted values: `SECRET_KEY_BASE` (64+ bytes), `ADMIN_EMAIL`, `ADMIN_PASSWORD`.
-4. Deploy. The service listens on `PORT` 10000, `PHX_HOST` is set automatically from the `onrender.com` hostname, and `DATABASE_URL` comes from the linked Postgres instance over Render's private network.
+3. On first sync, fill the prompted values: `DATABASE_URL` (the complete URL of your PostgreSQL server, see below), `SECRET_KEY_BASE` (64+ bytes), `ADMIN_EMAIL`, `ADMIN_PASSWORD`.
+4. Deploy. The service listens on `PORT` 10000, `PHX_HOST` is set automatically from the `onrender.com` hostname, and `DATABASE_URL` is the value entered at the first sync — it is kept across later syncs and never written to git.
+5. If you had previously linked a Render Postgres instance through this blueprint, the sync now offers to delete it (`robinahs-shop-db` is no longer in `render.yaml`). Confirm only once its contents are no longer needed.
 
-Manual equivalent, for the New Web Service page: create a Postgres instance named `robinahs-shop-db`, then a Docker web service from this repository (runtime **Docker**, root directory `/`, health check path `/healthz`) and set the variables listed below by hand. The service self-configures its hostname from Render, so `PHX_HOST` is optional.
+`DATABASE_URL` is a complete URL with scheme, host, port and database name:
+
+- External server (Aiven, RDS, DigitalOcean, …): `postgresql://user:password@host:5432/database?sslmode=require`. TLS is required — without `sslmode=require` the release refuses to start, because Postgrex would otherwise open a plain TCP connection to a TLS-only port. `sslmode=verify-ca`/`verify-full` additionally validate the certificate chain against the OS CA store.
+- Render Postgres in the same region: the instance's **Internal** URL (`postgresql://user:pass@host.render.internal:5432/database`, no `sslmode`). It only resolves when the database shares the service's region; an external URL removes that constraint.
+
+Manual equivalent, for the New Web Service page: a Docker web service from this repository (runtime **Docker**, root directory `/`, health check path `/healthz`) and set the variables listed below by hand. The service self-configures its hostname from Render, so `PHX_HOST` is optional.
 
 | Variable | Required | Value |
 | --- | --- | --- |
-| `DATABASE_URL` | yes | the linked Postgres **Internal** URL (`postgresql://user:pass@host:5432/db`); an external URL also works, `sslmode=require` is honoured |
+| `DATABASE_URL` | yes | complete URL of the PostgreSQL server: an external one needs `?sslmode=require`, a Render internal one has no `sslmode` and must be same-region |
 | `SECRET_KEY_BASE` | yes | 64+ bytes, e.g. `openssl rand -hex 64`; `SECRET_BASE_KEY` wins if both are set |
 | `ADMIN_EMAIL` | yes, on a new database | owner sign-in email, e.g. `owner@example.com`; ignored once an owner exists |
 | `ADMIN_PASSWORD` | yes, on a new database | 16–128 characters, e.g. `openssl rand -base64 24`; ignored once an owner exists |
 | `PHX_HOST` | no | defaults to `RENDER_EXTERNAL_HOSTNAME`; set it to a custom domain after adding one |
-| `PORT` | no | `10000` is what Render sends; the release reads it automatically |
-| `POOL_SIZE` | no | `5` (defaults to `10`) |
+| `PORT` | no | `10000` is what Render sends; must be a positive integer |
+| `POOL_SIZE` | no | `5` (defaults to `10`); must be a positive integer |
 | `JWT_SECRET` | yes | staff session digest secret; the blueprint generates it, or `openssl rand -hex 32` |
 | `LIVE_SIGNING_SALT` | yes | LiveView signing salt; the blueprint generates it, or `openssl rand -hex 16` |
 | `ERL_FLAGS` | no | `+S 2:2` to cap schedulers on small instances |
 
-If the service exits with a `Cannot start Robinah's Shop` message, the release lists every missing or invalid variable — add them in **Environment**, then redeploy. On a **new** database `ADMIN_EMAIL` and `ADMIN_PASSWORD` are verified before the owner account is created, so a deploy stops with an explicit message instead of leaving a shop nobody can sign in to; a database that already has an owner is never modified, so those two values can be removed from an existing service.
+If the service exits with a `Cannot start Robinah's Shop` message, the release lists every missing or invalid variable — add them in **Environment**, then redeploy. `DATABASE_URL`, `SECRET_KEY_BASE`, `JWT_SECRET`, `LIVE_SIGNING_SALT`, `POOL_SIZE` and `PORT` are all checked before the release opens a socket. On a **new** database `ADMIN_EMAIL` and `ADMIN_PASSWORD` are verified before the owner account is created, so a deploy stops with an explicit message instead of leaving a shop nobody can sign in to; a database that already has an owner is never modified, so those two values can be removed from an existing service.
 
 Notes:
 
-- The region is fixed at creation time. `render.yaml` pins the web service and the database to `region: oregon`, because the internal hostname in `DATABASE_URL` only resolves when both live in the same region; change both entries together if you pick another region.
-- The `free` plan spins down after 15 minutes of inactivity and resumes in about a minute; free Postgres instances expire, so upgrade both plans for a real shop. TLS and the WebSocket upgrade are terminated by Render, so staff LiveView works on the `onrender.com` domain without extra proxy configuration.
+- The web service region is fixed at creation time (`render.yaml` uses `region: oregon`). Because `DATABASE_URL` now points outside Render, the database no longer has to be in that region; only a Render-internal URL still requires both to match.
+- The `free` plan spins down after 15 minutes of inactivity and resumes in about a minute; upgrade it for a real shop. TLS and the WebSocket upgrade are terminated by Render, so staff LiveView works on the `onrender.com` domain without extra proxy configuration.
 - Pushes to `main` trigger an automatic rebuild. Migrations and seeds run on every container start and are idempotent; existing owner passwords and products are never overwritten.
 
 ## Data, backups and accounts

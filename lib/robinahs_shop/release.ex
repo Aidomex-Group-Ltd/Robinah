@@ -57,6 +57,10 @@ defmodule RobinahsShop.Release do
         "ADMIN_PASSWORD is not set. Generate one with: openssl rand -base64 24"
       )
       |> add_problem.(
+        password != "" and String.starts_with?(password, "REPLACE_WITH"),
+        "ADMIN_PASSWORD is still the placeholder from .env.example."
+      )
+      |> add_problem.(
         password != "" and String.length(password) < 16,
         "ADMIN_PASSWORD must be at least 16 characters (it is #{String.length(password)}). " <>
           "Generate one with: openssl rand -base64 24"

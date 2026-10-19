@@ -1,4 +1,4 @@
-# Render Blueprint: Dockerised Phoenix release + managed Postgres.
+# Render Blueprint: Dockerised Phoenix release + external PostgreSQL.
 #
 # Usage: Render Dashboard → New → Blueprint → pick this repository.
 # The first sync asks for the secrets marked `sync: false` below.
@@ -8,9 +8,8 @@ services:
     name: robinahs-shop
     runtime: docker
     plan: free
-    # Service and database must share a region: the private-network hostname in
-    # DATABASE_URL only resolves inside the region that hosts the instance.
-    # The region is fixed at creation time, so change both entries together.
+    # Fixed at creation time. The database is no longer a Render instance, so
+    # only the web service lives here; change it together with any proxy/DNS.
     region: oregon
     healthCheckPath: /healthz
     envVars:
@@ -23,14 +22,16 @@ services:
           envVarKey: RENDER_EXTERNAL_HOSTNAME
       - key: PORT
         value: "10000"
-      # `connectionString` is the database's complete internal URL
-      # (postgresql://user:password@host:5432/database) on Render's private
-      # network — same region as the service above, no TLS needed.
-      # An external URL works too: sslmode=require is honoured automatically.
+      # Complete URL of the external PostgreSQL server, entered once at the
+      # first sync and kept across later syncs (`sync: false`), so the
+      # password never lands in git. Format:
+      #   postgresql://user:password@host:5432/database?sslmode=require
+      # `sslmode=require` (or `verify-ca`/`verify-full`) is required for a
+      # server reached over the public internet; a Render internal URL
+      # (`postgresql://…@…render.internal:5432/…`, no sslmode) only resolves
+      # when the database is a Render instance in this same region.
       - key: DATABASE_URL
-        fromDatabase:
-          name: robinahs-shop-db
-          property: connectionString
+        sync: false
       - key: POOL_SIZE
         value: "5"
       - key: ERL_FLAGS
@@ -52,10 +53,7 @@ services:
       - key: ADMIN_PASSWORD
         sync: false
 
-databases:
-  - name: robinahs-shop-db
-    # Must match the web service region above (private DNS is per region).
-    region: oregon
-    databaseName: robinah_shop
-    user: robinah
-    plan: free
+# No `databases:` block: DATABASE_URL points at the external PostgreSQL
+# service above, so the web service and the database no longer have to share a
+# Render region. Removing a database from a blueprint makes Render offer to
+# delete the old instance on the next sync — confirm only when it is empty.
