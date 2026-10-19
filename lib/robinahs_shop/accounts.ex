@@ -27,6 +27,14 @@ defmodule RobinahsShop.Accounts do
     end
   end
 
+  @doc """
+  True when an owner account already exists, i.e. the database is not new.
+  Owner bootstrap only ever runs against a database without one.
+  """
+  def owner_exists? do
+    Repo.exists?(from u in Staff, where: u.role == :owner)
+  end
+
   def bootstrap_owner(email, password) do
     case Repo.one(from u in Staff, where: u.role == :owner, limit: 1) do
       nil ->

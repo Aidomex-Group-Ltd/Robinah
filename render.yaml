@@ -8,6 +8,10 @@ services:
     name: robinahs-shop
     runtime: docker
     plan: free
+    # Service and database must share a region: the private-network hostname in
+    # DATABASE_URL only resolves inside the region that hosts the instance.
+    # The region is fixed at creation time, so change both entries together.
+    region: oregon
     healthCheckPath: /healthz
     envVars:
       # Phoenix endpoint host, cookie domain and LiveView origin checks.
@@ -19,7 +23,9 @@ services:
           envVarKey: RENDER_EXTERNAL_HOSTNAME
       - key: PORT
         value: "10000"
-      # The blueprint wires Render's private-network URL; it needs no TLS.
+      # `connectionString` is the database's complete internal URL
+      # (postgresql://user:password@host:5432/database) on Render's private
+      # network — same region as the service above, no TLS needed.
       # An external URL works too: sslmode=require is honoured automatically.
       - key: DATABASE_URL
         fromDatabase:
@@ -30,13 +36,17 @@ services:
       - key: ERL_FLAGS
         value: "+S 2:2"
       # openssl rand -hex 64 — must be 64+ bytes, so it is entered by hand.
+      # If SECRET_BASE_KEY is set instead, it wins over SECRET_KEY_BASE.
       - key: SECRET_KEY_BASE
         sync: false
+      # Generated once by Render and kept across syncs; the release refuses to
+      # boot without them (staff session digests and the LiveView salt).
       - key: JWT_SECRET
         generateValue: true
       - key: LIVE_SIGNING_SALT
         generateValue: true
-      # Owner bootstrap account; an existing owner is never overwritten.
+      # Owner bootstrap account for a new database; an existing owner is never
+      # overwritten, and both values are validated before the account is created.
       - key: ADMIN_EMAIL
         sync: false
       - key: ADMIN_PASSWORD
@@ -44,6 +54,8 @@ services:
 
 databases:
   - name: robinahs-shop-db
+    # Must match the web service region above (private DNS is per region).
+    region: oregon
     databaseName: robinah_shop
     user: robinah
     plan: free
