@@ -86,6 +86,23 @@ bash scripts/backup.sh
 
 If Caddy was enabled, also use the edge deployment option for later updates. The Caddy service and certificates persist until explicitly removed.
 
+## Deploy to Render (Dockerised release)
+
+The repository ships a `render.yaml` blueprint: a Docker web service built from the root `Dockerfile` plus a managed Postgres instance. The container runs the OTP release; `scripts/docker-entrypoint.sh` applies migrations, seeds the 36 catalogue rows and bootstraps the owner before `bin/robinahs_shop start`.
+
+1. Generate the secrets first: `bash scripts/init-env.sh` (or `openssl rand -hex 64` for `SECRET_KEY_BASE`, a random password of 16+ characters for `ADMIN_PASSWORD`).
+2. Render Dashboard → **New → Blueprint** → connect `Aidomex-Group-Ltd/Robinah` → keep the root directory `/` and confirm `render.yaml`.
+3. On first sync, fill the prompted values: `SECRET_KEY_BASE` (64+ bytes), `ADMIN_EMAIL`, `ADMIN_PASSWORD`.
+4. Deploy. The service listens on `PORT` 10000, `PHX_HOST` is set automatically from the `onrender.com` hostname, and `DATABASE_URL` comes from the linked Postgres instance over Render's private network.
+
+Manual equivalent, for the New Web Service page: create a Postgres instance named `robinahs-shop-db`, then a Docker web service from this repository (runtime **Docker**, root directory `/`, health check path `/healthz`) and set the same variables by hand — `PHX_HOST`, `PORT=10000`, `DATABASE_URL` (copied from the database; an external URL works too — `sslmode=require` is honoured automatically), `POOL_SIZE=5`, `ERL_FLAGS=+S 2:2`, `SECRET_KEY_BASE`, `JWT_SECRET`, `LIVE_SIGNING_SALT`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`.
+
+Notes:
+
+- The region is fixed at creation time (default Oregon); pick the closest region when creating.
+- The `free` plan spins down after 15 minutes of inactivity and resumes in about a minute; free Postgres instances expire, so upgrade both plans for a real shop. TLS and the WebSocket upgrade are terminated by Render, so staff LiveView works on the `onrender.com` domain without extra proxy configuration.
+- Pushes to `main` trigger an automatic rebuild. Migrations and seeds run on every container start and are idempotent; existing owner passwords and products are never overwritten.
+
 ## Data, backups and accounts
 
 PostgreSQL data lives on the `db_data` named volume and is served by the bundled `db` service (PostgreSQL 16). Migrations and missing illustrative catalogue entries are applied at startup. Existing owner passwords and existing products are not overwritten. Removing the named volume deletes the database.
@@ -112,7 +129,7 @@ Existing passwords are never recovered from the original app. Revoked LiveView s
 - `assets/`: original stylesheet plus small LiveView additions; ES module entry point.
 - `priv/static/resources/`: original logo/photo and local copies of illustrative category images.
 - `priv/repo/`: schema migration and safe, repeatable catalogue seeds.
-- `deploy/`, `scripts/`, `compose*.yml`, `Dockerfile`: VPS deployment.
+- `deploy/`, `scripts/`, `compose*.yml`, `Dockerfile`, `render.yaml`: VPS and Render deployment.
 - `test/`: business-rule, session and HTTP access tests.
 - `reference/`: recovered public browser artifacts and asset provenance, excluded from the container.
 

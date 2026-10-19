@@ -1,0 +1,49 @@
+# Render Blueprint: Dockerised Phoenix release + managed Postgres.
+#
+# Usage: Render Dashboard → New → Blueprint → pick this repository.
+# The first sync asks for the secrets marked `sync: false` below.
+# Generate them first: bash scripts/init-env.sh (or openssl rand -hex 64).
+services:
+  - type: web
+    name: robinahs-shop
+    runtime: docker
+    plan: free
+    healthCheckPath: /healthz
+    envVars:
+      # Phoenix endpoint host, cookie domain and LiveView origin checks.
+      # Render injects the service's onrender.com hostname.
+      - key: PHX_HOST
+        fromService:
+          name: robinahs-shop
+          type: web
+          envVarKey: RENDER_EXTERNAL_HOSTNAME
+      - key: PORT
+        value: "10000"
+      # The blueprint wires Render's private-network URL; it needs no TLS.
+      # An external URL works too: sslmode=require is honoured automatically.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: robinahs-shop-db
+          property: connectionString
+      - key: POOL_SIZE
+        value: "5"
+      - key: ERL_FLAGS
+        value: "+S 2:2"
+      # openssl rand -hex 64 — must be 64+ bytes, so it is entered by hand.
+      - key: SECRET_KEY_BASE
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: LIVE_SIGNING_SALT
+        generateValue: true
+      # Owner bootstrap account; an existing owner is never overwritten.
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+
+databases:
+  - name: robinahs-shop-db
+    databaseName: robinah_shop
+    user: robinah
+    plan: free

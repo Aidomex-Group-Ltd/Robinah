@@ -87,11 +87,24 @@ if config_env() == :prod do
     raise "DATABASE_URL must be set, for example postgresql://user:pass@host:5432/robinah_dev"
   end
 
+  # libpq sslmode semantics. Render's blueprint supplies the private-network
+  # URL (no sslmode) which needs no TLS; the external URL requires
+  # `sslmode=require`, which encrypts without verifying the certificate.
+  # `verify-ca`/`verify-full` validate the chain against the OS CA store.
+  repo_ssl =
+    cond do
+      String.contains?(database_url, "sslmode=verify") -> true
+      String.contains?(database_url, "sslmode=disable") -> false
+      String.contains?(database_url, "sslmode=require") -> [verify: :verify_none]
+      System.get_env("PG_SSL") in ["true", "1"] -> [verify: :verify_none]
+      true -> false
+    end
+
   if String.contains?(database_url, "://") do
     config :robinahs_shop, RobinahsShop.Repo,
       url: database_url,
       pool_size: String.to_integer(System.get_env("POOL_SIZE", "10")),
-      ssl: System.get_env("PG_SSL") in ["true", "1"]
+      ssl: repo_ssl
   else
     config :robinahs_shop, RobinahsShop.Repo,
       database: database_url,
@@ -100,7 +113,7 @@ if config_env() == :prod do
       hostname: System.get_env("POSTGRES_HOST", "localhost"),
       port: String.to_integer(System.get_env("PGPORT", "5432")),
       pool_size: String.to_integer(System.get_env("POOL_SIZE", "10")),
-      ssl: System.get_env("PG_SSL") in ["true", "1"]
+      ssl: repo_ssl
   end
 
   config :robinahs_shop, RobinahsShopWeb.Endpoint,
