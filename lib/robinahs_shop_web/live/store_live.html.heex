@@ -17,7 +17,7 @@
         phx-click="basket"
         aria-label="Toggle enquiry basket"
         aria-expanded={to_string(@basket_open)}
-      ><.icon name="bag" /><span>Enquiry</span><b>{Enum.sum(Map.values(@cart))}</b></button><button
+      ><.icon name="cart" /><span>Enquiry</span><b :if={cart_total(@cart) > 0}>{cart_total(@cart)}</b></button><button
         class="menu-toggle"
         phx-click="menu"
         aria-label="Toggle navigation"

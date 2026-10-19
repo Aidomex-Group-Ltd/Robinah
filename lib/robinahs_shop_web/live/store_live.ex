@@ -60,6 +60,8 @@ defmodule RobinahsShopWeb.StoreLive do
   def cart_items(products, cart),
     do: Enum.filter(products, &(Map.get(cart, to_string(&1.id), 0) > 0))
 
+  def cart_total(cart), do: Enum.sum(Map.values(cart))
+
   def enquiry_url(products, cart) do
     lines =
       Enum.map_join(cart_items(products, cart), "\n", fn p ->

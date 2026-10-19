@@ -17,6 +17,31 @@ defmodule RobinahsShopWeb.LiveFlowsTest do
     assert has_element?(view, ".basket-drawer a[href*=\"wa.me\"]")
   end
 
+  test "cart badge tracks quantity 0-1-2-1-0 and hides at zero" do
+    Shop.seed_catalogue()
+    {:ok, view, _} = live(build_conn(), "/")
+
+    refute has_element?(view, ".basket-button b")
+
+    view |> form("#catalogue-search", %{q: "Torch"}) |> render_change()
+
+    view |> element(".product-bottom button", "Add to enquiry") |> render_click()
+    assert has_element?(view, ".basket-button b", "1")
+
+    view |> element(".product-bottom button", "Add to enquiry") |> render_click()
+    assert has_element?(view, ".basket-button b", "2")
+
+    view |> element(".basket-button") |> render_click()
+    assert has_element?(view, ".basket-drawer .basket-line", "Torch")
+
+    view |> element(".basket-line .quantity button[phx-click='minus']") |> render_click()
+    assert has_element?(view, ".basket-button b", "1")
+
+    view |> element(".basket-line .quantity button[phx-click='minus']") |> render_click()
+    refute has_element?(view, ".basket-button b")
+    refute has_element?(view, ".basket-drawer .basket-line", "Torch")
+  end
+
   test "staff receiving and sale flow changes stock and issues a confirmed receipt" do
     owner = owner_fixture()
     product = product_fixture(owner)
