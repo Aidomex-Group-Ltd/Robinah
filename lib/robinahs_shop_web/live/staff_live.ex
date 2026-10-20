@@ -14,8 +14,13 @@ defmodule RobinahsShopWeb.StaffLive do
   }
 
   def mount(_, _, socket) do
-    if connected?(socket), do: Shop.subscribe()
+    if connected?(socket) do
+      Shop.subscribe()
+      schedule_tick()
+    end
+
     user = socket.assigns.current_user
+    today = eat_today()
 
     socket =
       assign(socket,
@@ -30,7 +35,9 @@ defmodule RobinahsShopWeb.StaffLive do
         product_id: nil,
         product_form: to_form(Shop.change_product()),
         team_form: to_form(%{}, as: :staff),
-        filters: %{"from" => "", "to" => ""},
+        now: eat_now(),
+        today: today,
+        filters: today_filters(today),
         report: nil,
         sales: Shop.recent_sales(user),
         receivings: Shop.recent_receivings(user),
@@ -112,6 +119,7 @@ defmodule RobinahsShopWeb.StaffLive do
     if Accounts.allowed?(socket.assigns.current_user, :sale) and
          Enum.any?(socket.assigns.products, &(to_string(&1.id) == id and &1.active)) do
       socket = update(socket, :cart, &Cart.add(&1, id))
+      socket = maybe_fill_cash_received(socket)
       # Bring the billing console into view the moment an item is selected.
       {:noreply, push_event(socket, "scroll-basket", %{})}
     else
@@ -361,6 +369,52 @@ defmodule RobinahsShopWeb.StaffLive do
 
   def handle_info(:shop_changed, socket), do: {:noreply, refresh(socket)}
 
+  def handle_info(:tick, socket) do
+    now = eat_now()
+    today = DateTime.to_date(now)
+    previous = socket.assigns.today
+
+    socket = assign(socket, :now, now)
+
+    socket =
+      if today != previous do
+        socket
+        |> assign(:today, today)
+        |> roll_filters(previous, today)
+        |> roll_expense_date(previous, today)
+        |> maybe_reload_report()
+      else
+        socket
+      end
+
+    schedule_tick()
+    {:noreply, socket}
+  end
+
+  defp schedule_tick, do: Process.send_after(self(), :tick, 30_000)
+
+  defp today_filters(today),
+    do: %{"from" => Date.to_iso8601(today), "to" => Date.to_iso8601(today)}
+
+  defp roll_filters(socket, previous, today) do
+    if socket.assigns.filters == today_filters(previous),
+      do: assign(socket, :filters, today_filters(today)),
+      else: socket
+  end
+
+  defp roll_expense_date(socket, previous, today) do
+    if socket.assigns.expense_form[:spent_on].value == Date.to_iso8601(previous) do
+      params = Map.put(socket.assigns.expense_form.params, "spent_on", Date.to_iso8601(today))
+      assign(socket, :expense_form, to_form(params, as: :expense))
+    else
+      socket
+    end
+  end
+
+  defp maybe_reload_report(socket) do
+    if socket.assigns.live_action in [:reports, :expenses], do: load_report(socket), else: socket
+  end
+
   defp refresh(socket) do
     user = socket.assigns.current_user
 
@@ -414,9 +468,22 @@ defmodule RobinahsShopWeb.StaffLive do
 
   defp receiving_params, do: %{@empty_receiving | "request_id" => Ecto.UUID.generate()}
 
+  # Cash checkout requires an amount; prefill the exact cart total when blank.
+  defp maybe_fill_cash_received(socket) do
+    params = socket.assigns.sale_form.params
+
+    if params["payment_method"] == "Cash" and params["cash_received"] in [nil, ""] do
+      total = Cart.total(socket.assigns.products, socket.assigns.cart)
+      params = Map.put(params, "cash_received", Integer.to_string(total))
+      assign(socket, :sale_form, to_form(params, as: :sale))
+    else
+      socket
+    end
+  end
+
   defp expense_params do
     %{
-      "spent_on" => Date.to_iso8601(Date.utc_today()),
+      "spent_on" => Date.to_iso8601(eat_today()),
       "category" => hd(Shop.expense_categories()),
       "description" => "",
       "amount" => ""
@@ -473,6 +540,27 @@ defmodule RobinahsShopWeb.StaffLive do
 
   def pad(number) when number < 10, do: "0#{number}"
   def pad(number), do: to_string(number)
+
+  @doc "Human label for the report date scope shown in the metrics."
+  def scope_label(filters, today) do
+    from = filters["from"] || ""
+    to = filters["to"] || ""
+
+    cond do
+      from == "" and to == "" -> "Full date range"
+      from == Date.to_iso8601(today) and to == from -> "Today (EAT)"
+      true -> "#{scope_date(from)} → #{scope_date(to)}"
+    end
+  end
+
+  defp scope_date(""), do: "…"
+
+  defp scope_date(value) do
+    case Date.from_iso8601(value) do
+      {:ok, date} -> local_date(date)
+      _ -> value
+    end
+  end
 
   @doc """
   Product photographs available on disk, excluding brand artwork and the

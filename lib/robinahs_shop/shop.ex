@@ -323,11 +323,13 @@ defmodule RobinahsShop.Shop do
       rows = Repo.all(from s in query, order_by: [asc: s.id], preload: [:items])
 
       csv = [
-        ["Sale ID", "Date UTC", "Payment method", "Payment status", "Total UGX", "Items"]
+        ["Sale ID", "Date (EAT)", "Payment method", "Payment status", "Total UGX", "Items"]
         | Enum.map(rows, fn s ->
             [
               "RS-#{s.id}",
-              DateTime.to_iso8601(s.inserted_at),
+              s.inserted_at
+              |> DateTime.add(10_800)
+              |> Calendar.strftime("%Y-%m-%d %H:%M:%S"),
               s.payment_method,
               "Manual record",
               s.total,
@@ -542,7 +544,9 @@ defmodule RobinahsShop.Shop do
           # Ensure seeded catalogue items have 10 in stock and a mock unit price
           # when price hasn't been explicitly confirmed.
           if product.price == 0 do
-            product |> Ecto.Changeset.change(price: mock_price(number), stock: max(product.stock, 10)) |> Repo.update!()
+            product
+            |> Ecto.Changeset.change(price: mock_price(number), stock: max(product.stock, 10))
+            |> Repo.update!()
           else
             product |> Ecto.Changeset.change(stock: max(product.stock, 10)) |> Repo.update!()
           end

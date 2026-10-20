@@ -39,7 +39,16 @@ defmodule RobinahsShopWeb.Components do
     "UGX " <> sign <> formatted
   end
 
-  def local_time(dt), do: dt |> DateTime.add(10_800) |> Calendar.strftime("%d %b %Y, %H:%M EAT")
+  @eat_offset 10_800
+
+  @doc "Current instant shifted to East Africa Time (UTC+3)."
+  def eat_now, do: DateTime.add(DateTime.utc_now(), @eat_offset)
+
+  @doc "Today's calendar date in East Africa Time (UTC+3)."
+  def eat_today, do: DateTime.to_date(eat_now())
+
+  def local_time(dt),
+    do: dt |> DateTime.add(@eat_offset) |> Calendar.strftime("%d %b %Y, %H:%M EAT")
 
   def local_date(date), do: Calendar.strftime(date, "%d %b %Y")
   attr :name, :string, default: "arrow"
@@ -118,7 +127,6 @@ defmodule RobinahsShopWeb.Components do
   attr :count, :integer, required: true
   attr :total, :integer, default: nil
   attr :open, :boolean, default: false
-  attr :label, :string, default: "Enquiry"
   attr :on_click, :string, required: true
   attr :class, :string, default: nil
 
@@ -131,7 +139,7 @@ defmodule RobinahsShopWeb.Components do
       aria-label={"Toggle basket, #{@count} items"}
       aria-expanded={to_string(@open)}
     >
-      <.icon name="cart" /><span>{@label}</span>
+      <.icon name="cart" />
       <b :if={@count > 0}>{@count}</b>
       <small :if={@total && @total > 0} class="trolley-total">{money(@total)}</small>
     </button>

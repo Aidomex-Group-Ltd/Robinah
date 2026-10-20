@@ -1,0 +1,12 @@
+{
+  "name": "robinahs-shop-e2e",
+  "private": true,
+  "type": "module",
+  "description": "Browser end-to-end tests for Robinah's Shop (admin sign-in).",
+  "scripts": {
+    "test": "node admin-signin.e2e.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

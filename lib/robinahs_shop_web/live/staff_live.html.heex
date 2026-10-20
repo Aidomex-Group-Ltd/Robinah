@@ -20,7 +20,6 @@
           count={cart_count(@cart)}
           total={total(@products, @cart)}
           open={false}
-          label="Basket"
           on_click="review-basket"
           class="basket-tool"
         />
@@ -159,7 +158,6 @@
                       else: "item-row"
                   }
                 >
-
                   <td>
                     <button
                       type="button"
@@ -887,7 +885,10 @@
         <div>
           <span class="eyebrow">REPORTING</span><h1>Sales analytics &amp; reports</h1><p>
             Manual payment records over the selected date range. Date filters use East Africa Time.
-          </p>
+          </p><span class="report-clock"><i></i>Now: {Calendar.strftime(
+            @now,
+            "%d %b %Y, %H:%M"
+          )} EAT</span>
         </div>
       </div>
       <div class="report-heading">
@@ -918,8 +919,8 @@
           </article><article>
             <small>Average sale</small><strong>{money(@report.average)}</strong>
           </article>
-          
-          <article><small>Scope</small><strong>Full date range</strong></article>
+
+          <article><small>Scope</small><strong>{scope_label(@filters, @today)}</strong></article>
         </div>
         <h3>Profit &amp; loss</h3>
         <div class="report-metrics profit-metrics">
@@ -1031,7 +1032,9 @@
         :for={e <- @expenses}
         class="history-row"
       >
-        <b>{e.category}</b><span>{local_date(e.spent_on)} · {e.description} · {money(e.amount)}</span>
+        <b>{e.category}</b><span>{local_date(e.spent_on)} · recorded {local_time(e.inserted_at)} · {e.description} · {money(
+          e.amount
+        )}</span>
       </div>
     </section>
 
