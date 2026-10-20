@@ -358,13 +358,16 @@ defmodule RobinahsShop.Shop do
             })
           )
 
-        %Product{image: nil} = product ->
-          # Backfill the item photo only when it is still missing so a
-          # manager's own choice is never overwritten.
-          product |> Ecto.Changeset.change(image: resource_image(image)) |> Repo.update!()
-
-        _ ->
-          :ok
+        product ->
+          # The catalogue photograph is the single source of truth for a
+          # row's picture. A missing photo or an inherited category
+          # placeholder is upgraded; a manager's own item photo is never
+          # overwritten.
+          if placeholder_image?(product.image) do
+            product |> Ecto.Changeset.change(image: resource_image(image)) |> Repo.update!()
+          else
+            :ok
+          end
       end
     end)
 
@@ -381,19 +384,47 @@ defmodule RobinahsShop.Shop do
   # Earlier deployments created extra rows from the same note using a shared
   # category photo, so one placeholder picture appeared on many cards. Rows
   # outside the catalogue that repeat a note row's name while still carrying a
-  # shared placeholder photo are retired; their history stays intact.
+  # shared placeholder photo are retired after their live stock and confirmed
+  # selling price are moved onto the catalogue row, so consolidating onto the
+  # catalogue never loses the shop's working data.
   defp retire_note_duplicates do
     note_names = Enum.map(Catalogue.items(), fn {_, name, _, _, _} -> normalize_name(name) end)
 
     from(p in Product, where: p.active and not like(p.sku, "RSH-%"))
     |> Repo.all()
     |> Enum.filter(fn product ->
-      product.image in placeholder_images() and
+      placeholder_image?(product.image) and
         duplicates_note?(normalize_name(product.name), note_names)
     end)
     |> Enum.each(fn product ->
+      migrate_legacy_row(product)
       product |> Ecto.Changeset.change(active: false) |> Repo.update!()
     end)
+  end
+
+  defp migrate_legacy_row(legacy) do
+    with {:ok, number} <- unique_note_match(legacy.name),
+         %Product{} = row <- Repo.get_by(Product, sku: Catalogue.sku(number)) do
+      row
+      |> Ecto.Changeset.change(
+        stock: row.stock + legacy.stock,
+        price: if(row.price > 0, do: row.price, else: legacy.price)
+      )
+      |> Repo.update!()
+    else
+      _ -> :ok
+    end
+  end
+
+  defp unique_note_match(name) do
+    normalized = normalize_name(name)
+
+    case Enum.filter(Catalogue.items(), fn {_, note, _, _, _} ->
+           duplicates_note?(normalized, [normalize_name(note)])
+         end) do
+      [{number, _, _, _, _}] -> {:ok, number}
+      _ -> :error
+    end
   end
 
   defp duplicates_note?(name, note_names) do
@@ -418,6 +449,9 @@ defmodule RobinahsShop.Shop do
       &"/resources/#{&1}"
     )
   end
+
+  defp placeholder_image?(nil), do: true
+  defp placeholder_image?(image), do: image in placeholder_images()
 
   defp resource_image(nil), do: nil
 

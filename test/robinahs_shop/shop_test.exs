@@ -171,4 +171,40 @@ defmodule RobinahsShop.ShopTest do
     assert Repo.get!(Product, other_name.id).active
     assert Repo.get!(Product, own_photo.id).active
   end
+
+  test "seeding consolidates legacy placeholder rows onto the catalogue photo, price and stock",
+       %{owner: owner} do
+    legacy =
+      product_fixture(owner, %{
+        "name" => "Cup with numbers",
+        "sku" => "CUP-NUM-01",
+        "price" => 1_000,
+        "image" => "/resources/kitchen-essentials.jpg"
+      })
+
+    {:ok, _} = Shop.receive(owner, receive_attrs(legacy, 24))
+
+    Shop.seed_catalogue()
+
+    row = Repo.get_by!(Product, sku: "RSH-001")
+    assert row.image == "/resources/item-01-cup-with-numbers.jpg"
+    assert row.price == 1_000
+    assert row.stock == 24
+    refute Repo.get!(Product, legacy.id).active
+  end
+
+  test "seeding upgrades catalogue rows still carrying a legacy placeholder photo" do
+    Shop.seed_catalogue()
+
+    row =
+      Repo.get_by!(Product, sku: "RSH-006")
+      |> Ecto.Changeset.change(image: "/resources/kitchen-essentials.jpg", price: 2_000)
+      |> Repo.update!()
+
+    Shop.seed_catalogue()
+
+    upgraded = Repo.get!(Product, row.id)
+    assert upgraded.image == "/resources/item-06-torch.jpg"
+    assert upgraded.price == 2_000
+  end
 end
