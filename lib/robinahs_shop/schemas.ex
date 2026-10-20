@@ -120,6 +120,43 @@ defmodule RobinahsShop.SaleItem do
   end
 end
 
+defmodule RobinahsShop.Expense do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  @categories [
+    "Rent",
+    "Utilities",
+    "Transport",
+    "Wages",
+    "Packaging",
+    "Licences & fees",
+    "Repairs",
+    "Other"
+  ]
+
+  def categories, do: @categories
+
+  schema "expenses" do
+    field :spent_on, :date
+    field :category, :string
+    field :description, :string
+    field :amount, :integer
+    belongs_to :staff, RobinahsShop.Staff
+    timestamps(type: :utc_datetime_usec, updated_at: false)
+  end
+
+  def changeset(expense, attrs) do
+    expense
+    |> cast(attrs, [:spent_on, :category, :description, :amount])
+    |> update_change(:description, &String.trim/1)
+    |> validate_required([:spent_on, :category, :description, :amount])
+    |> validate_length(:description, min: 1, max: 300)
+    |> validate_inclusion(:category, @categories)
+    |> validate_number(:amount, greater_than: 0, less_than_or_equal_to: 1_000_000_000)
+  end
+end
+
 defmodule RobinahsShop.StockListEntry do
   use Ecto.Schema
   import Ecto.Changeset

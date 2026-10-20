@@ -78,6 +78,12 @@
         aria-current={if @live_action == :reports, do: "page"}
       >Reports</.link>
       <.link
+        :if={@can_expense}
+        patch={~p"/staff/expenses"}
+        class={if @live_action == :expenses, do: "selected"}
+        aria-current={if @live_action == :expenses, do: "page"}
+      >Expenses</.link>
+      <.link
         :if={@can_team}
         patch={~p"/staff/team"}
         class={if @live_action == :team, do: "selected"}
@@ -224,25 +230,37 @@
           </p>
         </section>
 
-        <section class="pos-checkout mobile-checkout" id="sale-basket" aria-label="Current sale">
+        <section
+          class="pos-checkout mobile-checkout billing-console"
+          id="sale-basket"
+          aria-label="Billing console"
+        >
           <div class="checkout-head">
-            <h2 class="checkout-title">Current sale</h2>
+            <div>
+              <span class="eyebrow">BILLING CONSOLE</span><h2 class="checkout-title">
+                Current sale
+              </h2>
+            </div>
             <span class={if @cart == %{}, do: "draft-pill", else: "draft-pill ready"}>
-              {if @cart == %{}, do: "Draft", else: "Ready"}
+              {if @cart == %{}, do: "Draft", else: "#{line_count(@cart)} items"}
             </span>
           </div>
-          <p :if={@cart == %{}} class="empty-state">
-            Select items from the list to build the sale. Rows and totals increment automatically.
-          </p>
-          <div :if={@cart != %{}} class="sale-table-wrap">
+          <div :if={@cart == %{}} class="billing-empty">
+            <span class="billing-empty-icon"><.trolley_icon /></span>
+            <b>No items yet</b>
+            <p>
+              Select items from the list — the console fills in and totals update automatically.
+            </p>
+          </div>
+          <div :if={@cart != %{}} class="sale-table-wrap" id="billing-scroll">
             <table class="sale-table">
               <thead>
                 <tr>
                   <th scope="col" class="col-line"><span class="sr-only">Line</span></th>
                   <th scope="col" class="col-item">Item</th>
-                  <th scope="col" class="col-qty">Quantity</th>
-                  <th scope="col" class="col-unit">Unit cost</th>
-                  <th scope="col" class="col-total">Sub total</th>
+                  <th scope="col" class="col-qty">Qty</th>
+                  <th scope="col" class="col-unit">Unit price</th>
+                  <th scope="col" class="col-total">Line total</th>
                   <th scope="col" class="col-remove"><span class="sr-only">Remove</span></th>
                 </tr>
               </thead>
@@ -253,8 +271,19 @@
                 >
                   <td class="col-line">{index + 1}</td>
                   <td class="col-item">
-                    <b>{line.product.name}</b>
-                    <small>{line.product.sku} · {line.product.unit}</small>
+                    <div class="sale-item-cell">
+                      <span class="sale-item-thumb">
+                        <%= if line.product.image do %>
+                          <img src={line.product.image} alt="" />
+                        <% else %>
+                          <b>{photo_monogram(line.product.name)}</b>
+                        <% end %>
+                      </span>
+                      <span class="sale-item-text">
+                        <b>{line.product.name}</b>
+                        <small>{line.product.sku} · {line.product.unit}</small>
+                      </span>
+                    </div>
                   </td>
                   <td class="col-qty">
                     <div class="quantity">
@@ -290,33 +319,27 @@
                   </td>
                 </tr>
               </tbody>
-              <tfoot>
-                <tr class="sale-total-row">
-                  <td class="col-line"><span class="sr-only">Totals</span></td>
-                  <td class="col-item">
-                    <b>{line_count(@cart)} lines · {total_units(@products, @cart)} units</b>
-                  </td>
-                  <td class="col-qty"></td>
-                  <td class="col-unit">Sub total</td>
-                  <td class="col-total">
-                    <b id="sale-subtotal">{money(subtotal(@products, @cart))}</b>
-                  </td>
-                  <td class="col-remove"></td>
-                </tr>
-                <tr class="sale-grand-row">
-                  <td class="col-line"><span class="sr-only">Grand total</span></td>
-                  <td class="col-item" colspan="3"><b>Grand total</b></td>
-                  <td class="col-total">
-                    <b id="sale-grand-total">{money(grand_total(@products, @cart))}</b>
-                  </td>
-                  <td class="col-remove"></td>
-                </tr>
-              </tfoot>
             </table>
           </div>
-          <p :if={@cart != %{}} class="total-note">
-            Auto-calculated: sub total = quantity × unit cost. No tax is added at the counter.
-          </p>
+          <div :if={@cart != %{}} class="billing-summary">
+            <div class="summary-line">
+              <span>Items selected</span><b>{line_count(@cart)}</b>
+            </div>
+            <div class="summary-line">
+              <span>Total units</span><b>{total_units(@products, @cart)}</b>
+            </div>
+            <div class="summary-line subtotal-line">
+              <span>Sub total</span><b id="sale-subtotal">{money(subtotal(@products, @cart))}</b>
+            </div>
+            <div class="grand-total-line">
+              <span>Grand total</span><b id="sale-grand-total">{money(
+                grand_total(@products, @cart)
+              )}</b>
+            </div>
+            <p class="total-note">
+              Line total = quantity × unit price. Grand total sums every selected line.
+            </p>
+          </div>
           <.form for={@sale_form} id="sale-form" phx-change="sale-change" phx-submit="post-sale">
             <div class="payment-buttons" role="group" aria-label="Payment method">
               <button
@@ -363,7 +386,7 @@
             >
               {if unconfirmed_prices?(@products, @cart),
                 do: "Confirm prices to checkout",
-                else: "Confirm & checkout"}
+                else: "Confirm & checkout · " <> money(grand_total(@products, @cart))}
             </button>
           </.form>
           <small class="checkout-note">
@@ -905,8 +928,29 @@
             <small>Completed sales</small><strong>{@report.count}</strong>
           </article><article>
             <small>Average sale</small><strong>{money(@report.average)}</strong>
-          </article><article><small>Scope</small><strong>Full date range</strong></article>
+          </article>
+          
+          <article><small>Scope</small><strong>Full date range</strong></article>
         </div>
+        <h3>Profit &amp; loss</h3>
+        <div class="report-metrics profit-metrics">
+          <article>
+            <small>Recorded revenue</small><strong>{money(@report.total)}</strong>
+          </article><article>
+            <small>Cost of goods sold</small><strong>{money(@report.cogs)}</strong>
+          </article><article>
+            <small>Gross profit</small><strong>{money(@report.gross_profit)}</strong>
+          </article><article>
+            <small>Operating expenses</small><strong>{money(@report.expenses)}</strong>
+          </article>
+        </div>
+        <div class="net-profit-line" data-positive={to_string(@report.net_profit >= 0)}>
+          <span>Net profit (balance)</span><b>{money(@report.net_profit)}</b>
+        </div>
+        <p class="total-note">
+          COGS uses each product’s average recorded buying cost. Expenses are the manual
+          ledger entries dated in this range.
+        </p>
         <h3>Payment method breakdown</h3><div class="report-table">
           <div class="report-row report-head"><b>Method</b><b>Sales</b><b>Recorded total</b></div><div
             :for={m <- @report.methods}
@@ -933,6 +977,73 @@
         Payment methods are manual records and do not mean a provider verified payment. CSV exports
         include all matching sales.
       </p>
+    </section>
+
+    <section :if={@live_action == :expenses} class="receiving-panel">
+      <div class="page-heading">
+        <div>
+          <span class="eyebrow">LEDGER</span><h1>Operating expenses</h1><p>
+            Record shop running costs as whole UGX amounts. Each entry is dated and attributed to
+            the staff member who logged it, then feeds the profit report.
+          </p>
+        </div>
+      </div>
+      <.form
+        for={@expense_form}
+        id="expense-form"
+        class="admin-form"
+        phx-change="expense-change"
+        phx-submit="record-expense"
+      >
+        <label>Date<input
+          type="date"
+          name="expense[spent_on]"
+          value={@expense_form[:spent_on].value}
+          required
+        /></label><label>Category<select name="expense[category]">
+          <option
+            :for={cat <- @expense_categories}
+            value={cat}
+            selected={@expense_form[:category].value == cat}
+          >
+            {cat}
+          </option>
+        </select></label><label>Amount (UGX)<input
+          type="number"
+          name="expense[amount]"
+          min="1"
+          step="1"
+          inputmode="numeric"
+          value={@expense_form[:amount].value}
+          required
+          placeholder="Whole UGX"
+        /></label><label>Description<input
+          name="expense[description]"
+          maxlength="300"
+          required
+          value={@expense_form[:description].value}
+          placeholder="What was paid for"
+        /></label><div class="wide">
+          <button class="button-primary" type="submit" phx-disable-with="Recording…">
+            Record expense
+          </button>
+        </div>
+      </.form>
+      <div class="report-metrics">
+        <article>
+          <small>Recorded expenses</small><strong>{money(
+            Enum.sum(Enum.map(@expenses, & &1.amount))
+          )}</strong>
+        </article><article>
+          <small>Entries shown</small><strong>{length(@expenses)}</strong>
+        </article>
+      </div>
+      <h3>Recent expense entries</h3><p :if={@expenses == []}>No expenses recorded yet.</p><div
+        :for={e <- @expenses}
+        class="history-row"
+      >
+        <b>{e.category}</b><span>{local_date(e.spent_on)} · {e.description} · {money(e.amount)}</span>
+      </div>
     </section>
 
     <section :if={@live_action == :team} class="receiving-panel">
@@ -1028,6 +1139,7 @@
     </div>
     <.link :if={@can_manage} patch={~p"/staff/products"} class="more-link">Products &amp; prices</.link>
     <.link :if={@can_report} patch={~p"/staff/reports"} class="more-link">Reports</.link>
+    <.link :if={@can_expense} patch={~p"/staff/expenses"} class="more-link">Expenses</.link>
     <.link :if={@can_team} patch={~p"/staff/team"} class="more-link">Staff accounts</.link>
     <a href={~p"/"} class="more-link">Public shop</a><.form
       for={%{}}
@@ -1086,6 +1198,17 @@
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 3v18h18"></path><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3">
           </path></svg>
           <span>Reports</span>
+        </.link>
+      </li>
+      <li :if={@can_expense} class="mobile-nav-item">
+        <.link
+          patch={~p"/staff/expenses"}
+          class={"mobile-nav-link #{if @live_action == :expenses, do: "active"}"}
+          aria-current={if @live_action == :expenses, do: "page"}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6">
+          </path></svg>
+          <span>Expenses</span>
         </.link>
       </li>
       <li class="mobile-nav-item">

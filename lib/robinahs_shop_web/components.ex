@@ -23,9 +23,12 @@ defmodule RobinahsShopWeb.Components do
   def money(nil), do: money(0)
 
   def money(value) do
+    rounded = round(value)
+    sign = if rounded < 0, do: "-", else: ""
+
     formatted =
-      value
-      |> round()
+      rounded
+      |> abs()
       |> Integer.to_string()
       |> String.reverse()
       |> String.graphemes()
@@ -33,10 +36,12 @@ defmodule RobinahsShopWeb.Components do
       |> Enum.map_join(",", &Enum.join/1)
       |> String.reverse()
 
-    "UGX " <> formatted
+    "UGX " <> sign <> formatted
   end
 
   def local_time(dt), do: dt |> DateTime.add(10_800) |> Calendar.strftime("%d %b %Y, %H:%M EAT")
+
+  def local_date(date), do: Calendar.strftime(date, "%d %b %Y")
   attr :name, :string, default: "arrow"
   attr :size, :integer, default: 18
 
@@ -130,6 +135,29 @@ defmodule RobinahsShopWeb.Components do
       <b :if={@count > 0}>{@count}</b>
       <small :if={@total && @total > 0} class="trolley-total">{money(@total)}</small>
     </button>
+    """
+  end
+
+  @doc """
+  Large trolley/cart glyph used as the empty-state illustration in the billing console.
+  """
+  def trolley_icon(assigns) do
+    ~H"""
+    <svg
+      width="40"
+      height="40"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.4"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
+      <path d="M8 20a1 1 0 1 0 0 2a1 1 0 1 0 0-2" />
+      <path d="M19 20a1 1 0 1 0 0 2a1 1 0 1 0 0-2" />
+    </svg>
     """
   end
 

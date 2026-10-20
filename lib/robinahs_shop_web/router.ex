@@ -27,6 +27,7 @@ defmodule RobinahsShopWeb.Router do
       live "/staff/receiving", StaffLive, :receiving
       live "/staff/products", StaffLive, :products
       live "/staff/reports", StaffLive, :reports
+      live "/staff/expenses", StaffLive, :expenses
       live "/staff/team", StaffLive, :team
     end
   end

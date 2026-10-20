@@ -1,6 +1,6 @@
 defmodule RobinahsShop.Shop do
   import Ecto.Query
-  alias RobinahsShop.{Repo, Accounts, Catalogue, Product, Sale, SaleItem, Receiving}
+  alias RobinahsShop.{Repo, Accounts, Catalogue, Product, Sale, SaleItem, Receiving, Expense}
 
   @categories [
     "Home & Kitchen",
@@ -235,6 +235,35 @@ defmodule RobinahsShop.Shop do
     end
   end
 
+  @doc """
+  Operating expenses are recorded manually by the owner or a manager. Like
+  sales, they are whole UGX amounts and never fractional.
+  """
+  def expense_categories, do: Expense.categories()
+
+  def change_expense(expense \\ %Expense{}, attrs \\ %{}), do: Expense.changeset(expense, attrs)
+
+  def record_expense(actor, attrs) do
+    if Accounts.allowed?(actor, :expense) do
+      result =
+        %Expense{staff_id: actor.id}
+        |> Expense.changeset(attrs)
+        |> Repo.insert()
+
+      announce(result)
+    else
+      {:error, :forbidden}
+    end
+  end
+
+  def recent_expenses(actor, limit \\ 50) do
+    if Accounts.allowed?(actor, :expense) do
+      Repo.all(from e in Expense, order_by: [desc: e.spent_on, desc: e.id], limit: ^limit)
+    else
+      []
+    end
+  end
+
   def report(actor, filters \\ %{}) do
     with true <- Accounts.allowed?(actor, :report), {:ok, query} <- sales_query(filters) do
       {total, count} = Repo.one(from s in query, select: {sum(s.total), count(s.id)})
@@ -264,14 +293,24 @@ defmodule RobinahsShop.Shop do
 
       sales = Repo.all(from s in query, order_by: [desc: s.id], limit: 50, preload: [:items])
 
+      revenue = total || 0
+      cogs = cost_of_goods_sold(query)
+      expenses = operating_expenses(filters)
+      gross_profit = revenue - cogs
+      net_profit = gross_profit - expenses
+
       {:ok,
        %{
-         total: total || 0,
+         total: revenue,
          count: count,
-         average: if(count > 0, do: div(total, count), else: 0),
+         average: if(count > 0, do: div(revenue, count), else: 0),
          methods: methods,
          best: best,
-         sales: sales
+         sales: sales,
+         cogs: cogs,
+         gross_profit: gross_profit,
+         expenses: expenses,
+         net_profit: net_profit
        }}
     else
       false -> {:error, :forbidden}
@@ -338,6 +377,91 @@ defmodule RobinahsShop.Shop do
 
       _ ->
         {:error, :invalid_dates}
+    end
+  end
+
+  @doc false
+  # Cost of goods sold for the sales matched by `sales_query/1`. The buying
+  # cost of each unit is the average across that product's recorded deliveries
+  # (total buying cost divided by total received quantity); a product with no
+  # recorded buying cost contributes nothing rather than inventing a figure.
+  defp cost_of_goods_sold(query) do
+    from(i in SaleItem,
+      join: s in subquery(query),
+      on: i.sale_id == s.id,
+      group_by: i.product_id,
+      select: {i.product_id, sum(i.quantity)}
+    )
+    |> Repo.all()
+    |> Enum.reduce(0, fn {product_id, quantity}, acc ->
+      acc + average_unit_cost(product_id) * quantity
+    end)
+  end
+
+  defp average_unit_cost(product_id) do
+    {cost, quantity} =
+      Repo.one(
+        from(r in Receiving,
+          where: r.product_id == ^product_id and not is_nil(r.buying_cost),
+          select: {sum(r.buying_cost * r.quantity), sum(r.quantity)}
+        )
+      )
+
+    if quantity && quantity > 0, do: div(cost, quantity), else: 0
+  end
+
+  @doc false
+  # Expenses carry a plain calendar date, so the range is compared against the
+  # same filter dates directly rather than the EAT-midnight instants used for
+  # sale timestamps.
+  defp operating_expenses(filters) do
+    with {:ok, first} <- expense_date(filters["from"]),
+         {:ok, last} <- expense_date(filters["to"]) do
+      query = from(e in Expense)
+      query = if first, do: from(e in query, where: e.spent_on >= ^first), else: query
+      query = if last, do: from(e in query, where: e.spent_on <= ^last), else: query
+
+      Repo.one(from(e in query, select: coalesce(sum(e.amount), 0)))
+    else
+      _ -> 0
+    end
+  end
+
+  defp expense_date(value) when value in [nil, ""], do: {:ok, nil}
+
+  defp expense_date(value) do
+    case Date.from_iso8601(value) do
+      {:ok, date} -> {:ok, date}
+      _ -> {:error, :invalid_dates}
+    end
+  end
+
+  @doc """
+  A small starter ledger so the profit report has something to show on a fresh
+  deployment. Idempotent: it does nothing once any expense exists, and it only
+  runs when an owner account is present to attribute the entries to.
+  """
+  def seed_expenses do
+    owner = Repo.one(from s in RobinahsShop.Staff, where: s.role == :owner, limit: 1)
+
+    if owner && not Repo.exists?(Expense) do
+      today = Date.utc_today()
+
+      [
+        {"Rent", "Monthly shop rent", 300_000, 0},
+        {"Utilities", "Umeme electricity token", 45_000, 2},
+        {"Transport", "Boda delivery of stock", 18_000, 3},
+        {"Packaging", "Carrier bags and wrap", 12_000, 5}
+      ]
+      |> Enum.each(fn {category, description, amount, days_ago} ->
+        Repo.insert!(%Expense{
+          staff_id: owner.id,
+          spent_on: Date.add(today, -days_ago),
+          category: category,
+          description: description,
+          amount: amount
+        })
+      end)
     end
   end
 

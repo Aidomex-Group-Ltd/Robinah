@@ -34,6 +34,9 @@ defmodule RobinahsShopWeb.StaffLive do
         report: nil,
         sales: Shop.recent_sales(user),
         receivings: Shop.recent_receivings(user),
+        expenses: Shop.recent_expenses(user),
+        expense_categories: Shop.expense_categories(),
+        expense_form: to_form(expense_params(), as: :expense),
         team: Accounts.list_staff(user),
         receipt: nil,
         inv_q: "",
@@ -48,6 +51,7 @@ defmodule RobinahsShopWeb.StaffLive do
         can_receive: Accounts.allowed?(user, :receive),
         can_manage: Accounts.allowed?(user, :manage),
         can_report: Accounts.allowed?(user, :report),
+        can_expense: Accounts.allowed?(user, :expense),
         can_team: Accounts.allowed?(user, :team)
       )
 
@@ -56,9 +60,14 @@ defmodule RobinahsShopWeb.StaffLive do
 
   def handle_params(_, _, socket) do
     permission =
-      %{pos: :sale, receiving: :receive, products: :manage, reports: :report, team: :team}[
-        socket.assigns.live_action
-      ]
+      %{
+        pos: :sale,
+        receiving: :receive,
+        products: :manage,
+        reports: :report,
+        expenses: :expense,
+        team: :team
+      }[socket.assigns.live_action]
 
     if Accounts.allowed?(socket.assigns.current_user, permission) do
       socket =
@@ -102,7 +111,9 @@ defmodule RobinahsShopWeb.StaffLive do
   def handle_event("add", %{"id" => id}, socket) when is_binary(id) and byte_size(id) <= 40 do
     if Accounts.allowed?(socket.assigns.current_user, :sale) and
          Enum.any?(socket.assigns.products, &(to_string(&1.id) == id and &1.active)) do
-      {:noreply, update(socket, :cart, &Cart.add(&1, id))}
+      socket = update(socket, :cart, &Cart.add(&1, id))
+      # Bring the billing console into view the moment an item is selected.
+      {:noreply, push_event(socket, "scroll-basket", %{})}
     else
       {:noreply, put_flash(socket, :error, "Product or permission unavailable.")}
     end
@@ -290,6 +301,29 @@ defmodule RobinahsShopWeb.StaffLive do
   def handle_event("clear-dates", _, socket),
     do: {:noreply, socket |> assign(:filters, %{"from" => "", "to" => ""}) |> load_report()}
 
+  def handle_event("expense-change", %{"expense" => params}, socket),
+    do: {:noreply, assign(socket, :expense_form, to_form(params, as: :expense))}
+
+  def handle_event("record-expense", %{"expense" => params}, socket) do
+    case Shop.record_expense(socket.assigns.current_user, params) do
+      {:ok, _expense} ->
+        {:noreply,
+         socket
+         |> assign(:expense_form, to_form(expense_params(), as: :expense))
+         |> refresh()
+         |> put_flash(:info, "Expense recorded against the shop ledger.")}
+
+      {:error, %Ecto.Changeset{} = cs} ->
+        {:noreply,
+         socket
+         |> assign(:expense_form, to_form(Map.put(cs, :action, :insert), as: :expense))
+         |> put_flash(:error, Shop.error_message(cs))}
+
+      {:error, error} ->
+        {:noreply, put_flash(socket, :error, Shop.error_message(error))}
+    end
+  end
+
   def handle_event("create-staff", %{"staff" => attrs}, socket) do
     case Accounts.create_staff(socket.assigns.current_user, attrs) do
       {:ok, _} ->
@@ -334,7 +368,8 @@ defmodule RobinahsShopWeb.StaffLive do
       assign(socket,
         products: Shop.all_products(user),
         sales: Shop.recent_sales(user),
-        receivings: Shop.recent_receivings(user)
+        receivings: Shop.recent_receivings(user),
+        expenses: Shop.recent_expenses(user)
       )
 
     socket =
@@ -342,7 +377,7 @@ defmodule RobinahsShopWeb.StaffLive do
         do: load_inventory(socket),
         else: socket
 
-    if socket.assigns.live_action == :reports, do: load_report(socket), else: socket
+    if socket.assigns.live_action in [:reports, :expenses], do: load_report(socket), else: socket
   end
 
   defp load_inventory(socket) do
@@ -379,6 +414,15 @@ defmodule RobinahsShopWeb.StaffLive do
 
   defp receiving_params, do: %{@empty_receiving | "request_id" => Ecto.UUID.generate()}
 
+  defp expense_params do
+    %{
+      "spent_on" => Date.to_iso8601(Date.utc_today()),
+      "category" => hd(Shop.expense_categories()),
+      "description" => "",
+      "amount" => ""
+    }
+  end
+
   defp review_error(:price_required), do: "Enter the confirmed unit price before confirming."
   defp review_error(:not_found), do: "That reference entry no longer exists."
   defp review_error(:forbidden), do: "Your staff role does not permit confirming prices."
@@ -388,6 +432,7 @@ defmodule RobinahsShopWeb.StaffLive do
   def title(:receiving), do: "Inventory & receiving"
   def title(:products), do: "Product catalogue"
   def title(:reports), do: "Sales analytics & reports"
+  def title(:expenses), do: "Operating expenses"
   def title(:team), do: "Staff accounts"
 
   def cart_count(cart), do: Cart.count(cart)

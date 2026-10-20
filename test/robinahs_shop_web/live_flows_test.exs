@@ -134,6 +134,31 @@ defmodule RobinahsShopWeb.LiveFlowsTest do
     assert has_element?(view, "input[name='sale[payment_method]'][value='Cash']")
   end
 
+  test "owner records an expense and sees it in the ledger and profit report" do
+    owner = owner_fixture()
+    conn = build_conn() |> init_test_session(%{staff_token: Accounts.create_session(owner)})
+    {:ok, view, _} = live(conn, "/staff/expenses")
+
+    view
+    |> form("#expense-form",
+      expense: %{
+        spent_on: Date.to_iso8601(Date.utc_today()),
+        category: "Rent",
+        amount: "250000",
+        description: "Monthly rent"
+      }
+    )
+    |> render_submit()
+
+    assert has_element?(view, ".history-row", "Monthly rent")
+    assert has_element?(view, ".history-row", "UGX 250,000")
+    assert Repo.aggregate(RobinahsShop.Expense, :count) == 1
+
+    view |> element("nav.staff-tabs a", "Reports") |> render_click()
+    assert has_element?(view, ".net-profit-line", "UGX -250,000")
+    assert has_element?(view, ".profit-metrics article", "UGX 250,000")
+  end
+
   test "inventory review page lists the imported stock list with pagination" do
     owner = owner_fixture()
     conn = build_conn() |> init_test_session(%{staff_token: Accounts.create_session(owner)})

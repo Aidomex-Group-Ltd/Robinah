@@ -3,7 +3,7 @@ defmodule RobinahsShop.DataCase do
 
   using do
     quote do
-      alias RobinahsShop.{Accounts, Shop, Repo, Catalogue, Product, Sale, Receiving}
+      alias RobinahsShop.{Accounts, Shop, Repo, Catalogue, Product, Sale, Receiving, Expense}
       import Ecto.Query
       import RobinahsShop.DataCase
     end
@@ -65,4 +65,16 @@ defmodule RobinahsShop.DataCase do
       "payment_method" => "Cash",
       "cash_received" => "10000"
     }
+
+  def expense_attrs(attrs \\ %{}) do
+    Map.merge(
+      %{
+        "spent_on" => Date.to_iso8601(Date.utc_today()),
+        "category" => "Utilities",
+        "description" => "Electricity token",
+        "amount" => "50000"
+      },
+      attrs
+    )
+  end
 end

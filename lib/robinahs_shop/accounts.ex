@@ -7,6 +7,7 @@ defmodule RobinahsShop.Accounts do
     receive: [:owner, :manager, :receiver],
     manage: [:owner, :manager],
     report: [:owner, :manager],
+    expense: [:owner, :manager],
     team: [:owner]
   }
 

@@ -121,6 +121,85 @@ defmodule RobinahsShop.ShopTest do
     assert {:error, :invalid_dates} = Shop.report(owner, %{"from" => "invalid"})
   end
 
+  test "expenses are recorded with whole UGX amounts and rejected when invalid", %{
+    owner: owner
+  } do
+    assert {:ok, expense} = Shop.record_expense(owner, expense_attrs(%{"amount" => "50000"}))
+    assert expense.amount == 50_000
+    assert expense.category == "Utilities"
+    assert expense.staff_id == owner.id
+    assert Repo.aggregate(Expense, :count) == 1
+
+    assert {:error, %Ecto.Changeset{}} =
+             Shop.record_expense(owner, expense_attrs(%{"amount" => "0"}))
+
+    assert {:error, %Ecto.Changeset{}} =
+             Shop.record_expense(owner, expense_attrs(%{"amount" => "100.5"}))
+
+    assert {:error, %Ecto.Changeset{}} =
+             Shop.record_expense(owner, expense_attrs(%{"category" => "Bribes"}))
+
+    assert Repo.aggregate(Expense, :count) == 1
+  end
+
+  test "only owners and managers may record expenses", %{owner: owner, product: p} do
+    cashier = staff_fixture(owner, "cashier")
+    receiver = staff_fixture(owner, "receiver")
+
+    assert {:error, :forbidden} = Shop.record_expense(cashier, expense_attrs())
+    assert {:error, :forbidden} = Shop.record_expense(receiver, expense_attrs())
+    refute Accounts.allowed?(cashier, :expense)
+    assert Accounts.allowed?(owner, :expense)
+    assert p
+  end
+
+  test "profit report subtracts average buying cost and expenses from revenue", %{
+    owner: owner,
+    product: p
+  } do
+    {:ok, _} = Shop.receive(owner, Map.put(receive_attrs(p, 10), "buying_cost", "1000"))
+    {:ok, _} = Shop.post_sale(owner, sale_attrs(p, 4))
+    {:ok, _} = Shop.record_expense(owner, expense_attrs(%{"amount" => "1500"}))
+
+    assert {:ok, report} = Shop.report(owner, %{})
+
+    assert report.total == 8_000
+    assert report.cogs == 4_000
+    assert report.gross_profit == 4_000
+    assert report.expenses == 1_500
+    assert report.net_profit == 2_500
+  end
+
+  test "expense totals respect the report date range", %{owner: owner} do
+    {:ok, _} = Shop.record_expense(owner, expense_attrs(%{"amount" => "1000"}))
+    old = Date.add(Date.utc_today(), -30)
+
+    {:ok, _} =
+      Shop.record_expense(
+        owner,
+        expense_attrs(%{"amount" => "7000", "spent_on" => Date.to_iso8601(old)})
+      )
+
+    assert {:ok, report} = Shop.report(owner, %{})
+    assert report.expenses == 8_000
+
+    today = Date.to_iso8601(Date.utc_today())
+    assert {:ok, today_report} = Shop.report(owner, %{"from" => today, "to" => today})
+    assert today_report.expenses == 1_000
+  end
+
+  test "products without a recorded buying cost contribute zero to COGS", %{
+    owner: owner,
+    product: p
+  } do
+    {:ok, _} = Shop.receive(owner, Map.put(receive_attrs(p, 5), "buying_cost", ""))
+    {:ok, _} = Shop.post_sale(owner, sale_attrs(p, 2))
+
+    assert {:ok, report} = Shop.report(owner, %{})
+    assert report.total == 4_000
+    assert report.cogs == 0
+  end
+
   test "catalogue seeding is repeatable without replacing configured prices", %{owner: owner} do
     Shop.seed_catalogue()
     Shop.seed_catalogue()

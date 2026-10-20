@@ -1,5 +1,6 @@
 RobinahsShop.Shop.seed_catalogue()
 RobinahsShop.StockList.ensure_reference!()
+RobinahsShop.Shop.seed_expenses()
 
 case {System.get_env("ADMIN_EMAIL"), System.get_env("ADMIN_PASSWORD")} do
   {email, password} when is_binary(email) and is_binary(password) ->
