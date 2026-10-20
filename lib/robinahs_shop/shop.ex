@@ -465,6 +465,49 @@ defmodule RobinahsShop.Shop do
     end
   end
 
+  # A simple deterministic price table so seeded items can be used for
+  # end-to-end tests and a sensible till without requiring manual review.
+  @mock_prices %{
+    1 => 5_000,
+    2 => 3_000,
+    3 => 8_000,
+    4 => 25_000,
+    5 => 5_000,
+    6 => 12_000,
+    7 => 1_000,
+    8 => 2_000,
+    9 => 6_000,
+    10 => 350_000,
+    11 => 15_000,
+    12 => 3_000,
+    13 => 45_000,
+    14 => 280_000,
+    15 => 18_000,
+    16 => 4_000,
+    17 => 6_000,
+    18 => 8_000,
+    19 => 1_000,
+    20 => 12_000,
+    21 => 10_000,
+    22 => 7_000,
+    23 => 16_000,
+    24 => 12_000,
+    25 => 2_000,
+    26 => 2_000,
+    27 => 7_000,
+    28 => 3_000,
+    29 => 1_000,
+    30 => 5_000,
+    31 => 9_000,
+    32 => 8_000,
+    33 => 6_000,
+    34 => 2_000,
+    35 => 9_000,
+    36 => 10_000
+  }
+
+  def mock_price(number), do: Map.get(@mock_prices, number, 5_000)
+
   def seed_catalogue do
     Enum.each(Catalogue.items(), fn {number, name, category, unit, image} ->
       sku = Catalogue.sku(number)
@@ -478,9 +521,12 @@ defmodule RobinahsShop.Shop do
               category: category,
               unit: unit,
               image: resource_image(image),
-              price: 0
+              price: mock_price(number)
             })
           )
+
+          # Give every seeded catalogue item a starting stock of 10 pieces.
+          Repo.update_all(from(p in Product, where: p.sku == ^sku), set: [stock: 10])
 
         product ->
           # The catalogue photograph is the single source of truth for a
@@ -491,6 +537,14 @@ defmodule RobinahsShop.Shop do
             product |> Ecto.Changeset.change(image: resource_image(image)) |> Repo.update!()
           else
             :ok
+          end
+
+          # Ensure seeded catalogue items have 10 in stock and a mock unit price
+          # when price hasn't been explicitly confirmed.
+          if product.price == 0 do
+            product |> Ecto.Changeset.change(price: mock_price(number), stock: max(product.stock, 10)) |> Repo.update!()
+          else
+            product |> Ecto.Changeset.change(stock: max(product.stock, 10)) |> Repo.update!()
           end
       end
     end)

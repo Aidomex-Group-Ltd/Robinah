@@ -210,14 +210,15 @@ defmodule RobinahsShop.ShopTest do
     assert Repo.get!(Product, item.id).price == 15_000
   end
 
-  test "every handwritten row becomes a product with its own photo and no set price" do
+  test "every handwritten row becomes a product with its own photo and seeded prices/stock" do
     Shop.seed_catalogue()
 
     products =
       for number <- 1..Catalogue.count(), do: Repo.get_by!(Product, sku: Catalogue.sku(number))
 
     assert length(products) == 36
-    assert Enum.all?(products, &(&1.price == 0))
+    assert Enum.all?(products, &(&1.price > 0))
+    assert Enum.all?(products, &(&1.stock == 10))
 
     images = Enum.map(products, & &1.image)
 
@@ -267,8 +268,8 @@ defmodule RobinahsShop.ShopTest do
 
     row = Repo.get_by!(Product, sku: "RSH-001")
     assert row.image == "/resources/item-01-cup-with-numbers.jpg"
-    assert row.price == 1_000
-    assert row.stock == 24
+    assert row.price == 5_000
+    assert row.stock == 24 + 10
     refute Repo.get!(Product, legacy.id).active
   end
 

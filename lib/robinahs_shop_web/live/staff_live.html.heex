@@ -143,9 +143,8 @@
             <table class="item-list" id="pos-products">
               <thead>
                 <tr>
-                  <th scope="col" class="col-photo"><span class="sr-only">Photo</span></th>
                   <th scope="col">Item</th>
-                  <th scope="col" class="col-unit">Unit cost</th>
+                  <th scope="col" class="col-unit">Unit price</th>
                   <th scope="col" class="col-stock">Stock</th>
                   <th scope="col" class="col-add">Select</th>
                 </tr>
@@ -160,17 +159,7 @@
                       else: "item-row"
                   }
                 >
-                  <td class="col-photo">
-                    <div class="item-thumb">
-                      <%= if p.image do %>
-                        <img src={p.image} alt="" loading="lazy" />
-                      <% else %>
-                        <span class="photo-fallback" role="img" aria-label={p.name}>
-                          <b>{photo_monogram(p.name)}</b>
-                        </span>
-                      <% end %>
-                    </div>
-                  </td>
+
                   <td>
                     <button
                       type="button"
