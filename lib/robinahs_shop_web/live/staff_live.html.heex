@@ -133,48 +133,80 @@
               aria-pressed={to_string(@category == cat)}
             >{cat}</button>
           </div>
-          <section
-            :if={@category == "All items" and @q == ""}
-            class="merch-strip"
-            aria-label="Everyday essentials"
-          >
-            <div class="merch-copy">
-              <b>Everyday essentials</b>
-              <small>Useful finds for every home.</small>
-            </div>
-            <div class="merch-thumbs">
-              <img src="/resources/household-storage.jpg" alt="" loading="lazy" />
-              <img src="/resources/kitchen-essentials.jpg" alt="" loading="lazy" />
-              <img src="/resources/school-essentials.jpg" alt="" loading="lazy" />
-            </div>
-          </section>
-          <div class="products-grid two-column" id="pos-products">
-            <button
-              :for={p <- visible_products(@products, @category, @q)}
-              type="button"
-              class="product-card-pos"
-              phx-click="add"
-              phx-value-id={p.id}
-              aria-label={"Add #{p.name} to the sale"}
-            >
-              <div class="product-image">
-                <%= if p.image do %>
-                  <img src={p.image} alt="" loading="lazy" />
-                <% else %>
-                  <div class="photo-fallback" role="img" aria-label={p.name}>
-                    <b>{photo_monogram(p.name)}</b><span>No photo</span>
-                  </div>
-                <% end %>
-              </div>
-              <div class="product-info">
-                <h3>{p.name}</h3><small class="product-sku">{p.sku}</small><.stock_badge product={
-                  p
-                } /><p class="listed-price">
-                  {if p.price > 0, do: money(p.price), else: "Confirm price"}
-                </p>
-              </div>
-              <span class="add-circle" aria-hidden="true"><.icon name="plus" /></span>
-            </button>
+          <div class="item-list-wrap">
+            <table class="item-list" id="pos-products">
+              <thead>
+                <tr>
+                  <th scope="col" class="col-photo"><span class="sr-only">Photo</span></th>
+                  <th scope="col">Item</th>
+                  <th scope="col" class="col-unit">Unit cost</th>
+                  <th scope="col" class="col-stock">Stock</th>
+                  <th scope="col" class="col-add">Select</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  :for={p <- visible_products(@products, @category, @q)}
+                  id={"item-row-#{p.id}"}
+                  class={
+                    if Map.get(@cart, to_string(p.id), 0) > 0,
+                      do: "item-row selected",
+                      else: "item-row"
+                  }
+                >
+                  <td class="col-photo">
+                    <div class="item-thumb">
+                      <%= if p.image do %>
+                        <img src={p.image} alt="" loading="lazy" />
+                      <% else %>
+                        <span class="photo-fallback" role="img" aria-label={p.name}>
+                          <b>{photo_monogram(p.name)}</b>
+                        </span>
+                      <% end %>
+                    </div>
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      class="item-name"
+                      phx-click="add"
+                      phx-value-id={p.id}
+                      aria-label={"Add #{p.name} to the sale"}
+                    ><b>{p.name}</b></button>
+                    <small class="product-sku">{p.sku} · {p.unit}</small>
+                  </td>
+                  <td class="col-unit">
+                    <b class="unit-cost">
+                      {if p.price > 0, do: money(p.price), else: "Confirm price"}
+                    </b>
+                  </td>
+                  <td class="col-stock"><.stock_badge product={p} /></td>
+                  <td class="col-add">
+                    <div :if={Map.get(@cart, to_string(p.id), 0) > 0} class="quantity">
+                      <button
+                        type="button"
+                        phx-click="minus"
+                        phx-value-id={p.id}
+                        aria-label={"Decrease #{p.name}"}
+                      >−</button><span class="qty-value">{Map.get(@cart, to_string(p.id), 0)}</span><button
+                        type="button"
+                        phx-click="add"
+                        phx-value-id={p.id}
+                        aria-label={"Increase #{p.name}"}
+                      >+</button>
+                    </div>
+                    <button
+                      :if={Map.get(@cart, to_string(p.id), 0) == 0}
+                      type="button"
+                      class="add-btn"
+                      phx-click="add"
+                      phx-value-id={p.id}
+                      aria-label={"Add #{p.name} to the sale"}
+                    ><.icon name="plus" /> Add</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
           <p :if={visible_products(@products, @category, @q) == []} class="empty-state">
             {if @products == [],
@@ -194,25 +226,32 @@
 
         <section class="pos-checkout mobile-checkout" id="sale-basket" aria-label="Current sale">
           <div class="checkout-head">
-            <h2 class="checkout-title">Current sale · {cart_count(@cart)} items</h2>
+            <h2 class="checkout-title">Current sale</h2>
             <span class={if @cart == %{}, do: "draft-pill", else: "draft-pill ready"}>
               {if @cart == %{}, do: "Draft", else: "Ready"}
             </span>
           </div>
-          <p :if={@cart == %{}} class="empty-state">Add products to begin a sale.</p>
+          <p :if={@cart == %{}} class="empty-state">
+            Select items from the list to build the sale. Rows and totals increment automatically.
+          </p>
           <div :if={@cart != %{}} class="sale-table-wrap">
             <table class="sale-table">
               <thead>
                 <tr>
+                  <th scope="col" class="col-line"><span class="sr-only">Line</span></th>
                   <th scope="col" class="col-item">Item</th>
-                  <th scope="col" class="col-qty">Qty</th>
-                  <th scope="col" class="col-unit">Unit price</th>
-                  <th scope="col" class="col-total">Amount</th>
+                  <th scope="col" class="col-qty">Quantity</th>
+                  <th scope="col" class="col-unit">Unit cost</th>
+                  <th scope="col" class="col-total">Sub total</th>
                   <th scope="col" class="col-remove"><span class="sr-only">Remove</span></th>
                 </tr>
               </thead>
               <tbody>
-                <tr :for={line <- cart_line(@products, @cart)} id={"sale-row-#{line.product.id}"}>
+                <tr
+                  :for={{line, index} <- Enum.with_index(cart_line(@products, @cart))}
+                  id={"sale-row-#{line.product.id}"}
+                >
+                  <td class="col-line">{index + 1}</td>
                   <td class="col-item">
                     <b>{line.product.name}</b>
                     <small>{line.product.sku} · {line.product.unit}</small>
@@ -251,14 +290,33 @@
                   </td>
                 </tr>
               </tbody>
+              <tfoot>
+                <tr class="sale-total-row">
+                  <td class="col-line"><span class="sr-only">Totals</span></td>
+                  <td class="col-item">
+                    <b>{line_count(@cart)} lines · {total_units(@products, @cart)} units</b>
+                  </td>
+                  <td class="col-qty"></td>
+                  <td class="col-unit">Sub total</td>
+                  <td class="col-total">
+                    <b id="sale-subtotal">{money(subtotal(@products, @cart))}</b>
+                  </td>
+                  <td class="col-remove"></td>
+                </tr>
+                <tr class="sale-grand-row">
+                  <td class="col-line"><span class="sr-only">Grand total</span></td>
+                  <td class="col-item" colspan="3"><b>Grand total</b></td>
+                  <td class="col-total">
+                    <b id="sale-grand-total">{money(grand_total(@products, @cart))}</b>
+                  </td>
+                  <td class="col-remove"></td>
+                </tr>
+              </tfoot>
             </table>
           </div>
-          <div class="total-section">
-            <div class="total-line">
-              <span>Total</span><b id="sale-grand-total">{money(total(@products, @cart))}</b>
-            </div>
-            <p class="total-note">Auto-calculated from quantity × confirmed unit price.</p>
-          </div>
+          <p :if={@cart != %{}} class="total-note">
+            Auto-calculated: sub total = quantity × unit cost. No tax is added at the counter.
+          </p>
           <.form for={@sale_form} id="sale-form" phx-change="sale-change" phx-submit="post-sale">
             <div class="payment-buttons" role="group" aria-label="Payment method">
               <button
@@ -324,30 +382,56 @@
             aria-label="Close receipt"
           ><.icon name="close" size={18} /></button>
         </div>
-        <h3>Robinah’s Shop · Receipt RS-{@receipt.id}</h3><p>
-          {local_time(@receipt.inserted_at)}
-        </p>
+        <div class="receipt-brand">
+          <b>Robinah’s Shop</b>
+          <small>Koranorya, opposite Premier Bet · Mbarara</small>
+          <small>+256 774 843 183</small>
+        </div>
+        <dl class="receipt-meta">
+          <div>
+            <dt>Receipt</dt><dd>RS-{@receipt.id}</dd>
+          </div>
+          <div>
+            <dt>Date</dt><dd>{local_time(@receipt.inserted_at)}</dd>
+          </div>
+          <div>
+            <dt>Payment</dt><dd>{@receipt.payment_method}</dd>
+          </div>
+        </dl>
         <table class="receipt-table">
           <thead>
             <tr>
               <th scope="col">Item</th>
-              <th scope="col">Qty</th>
-              <th scope="col">Amount</th>
+              <th scope="col" class="col-qty">Qty</th>
+              <th scope="col" class="col-unit">Unit cost</th>
+              <th scope="col" class="col-sub">Sub total</th>
             </tr>
           </thead>
           <tbody>
             <tr :for={item <- @receipt.items}>
               <td>{item.name}</td>
-              <td>{item.quantity}</td>
-              <td>{money(item.quantity * item.unit_price)}</td>
+              <td class="col-qty">{item.quantity}</td>
+              <td class="col-unit">{money(item.unit_price)}</td>
+              <td class="col-sub">{money(item.quantity * item.unit_price)}</td>
             </tr>
           </tbody>
+          <tfoot>
+            <tr class="receipt-sub-row">
+              <td colspan="3">Sub total</td>
+              <td class="col-sub">{money(@receipt.total)}</td>
+            </tr>
+            <tr class="receipt-total-row">
+              <td colspan="3"><b>Total</b></td>
+              <td class="col-sub"><b>{money(@receipt.total)}</b></td>
+            </tr>
+          </tfoot>
         </table>
-        <p><b>Total: {money(@receipt.total)}</b> · {@receipt.payment_method}</p><p :if={
-          @receipt.cash_received
-        }>
+        <p :if={@receipt.cash_received} class="receipt-cash">
           Cash received: {money(@receipt.cash_received)} · Change: {money(@receipt.change)}
-        </p><small>Manual payment record. +256 774 843 183 · Koranorya, Mbarara.</small>
+        </p>
+        <small class="receipt-note">
+          Manual payment record, not provider verification. Thank you for shopping with us.
+        </small>
         <div class="receipt-actions">
           <button class="button-primary" phx-click="print"><.icon name="download" /> Print receipt</button>
           <button class="button-secondary" phx-click="close-receipt">New sale</button>

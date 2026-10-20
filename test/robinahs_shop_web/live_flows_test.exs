@@ -55,11 +55,12 @@ defmodule RobinahsShopWeb.LiveFlowsTest do
     |> render_submit()
 
     view |> element("nav.staff-tabs a", "POS") |> render_click()
-    view |> element(".product-card-pos", product.name) |> render_click()
+    view |> element("#item-row-#{product.id} .item-name") |> render_click()
 
     assert has_element?(view, ".sale-table tbody tr", product.name)
     assert has_element?(view, ".sale-table .col-unit", "UGX 2,500")
     assert has_element?(view, ".sale-table .col-total b", "UGX 2,500")
+    assert has_element?(view, "#sale-subtotal", "UGX 2,500")
     assert has_element?(view, "#sale-grand-total", "UGX 2,500")
 
     view
@@ -92,13 +93,14 @@ defmodule RobinahsShopWeb.LiveFlowsTest do
     assert Repo.get!(Product, product.id).stock == 5
     view |> element("nav.staff-tabs a", "POS") |> render_click()
     assert_patch(view, "/staff/pos")
-    view |> element(".product-card-pos", product.name) |> render_click()
+    view |> element("#item-row-#{product.id} .item-name") |> render_click()
 
     view
     |> form("#sale-form", sale: %{payment_method: "Cash", cash_received: "5000"})
     |> render_submit()
 
-    assert has_element?(view, ".receipt", "Receipt RS-")
+    assert has_element?(view, ".receipt", "Robinah’s Shop")
+    assert has_element?(view, ".receipt .receipt-meta dd", "RS-#{Repo.one(Sale).id}")
     assert Repo.get!(Product, product.id).stock == 4
     assert Repo.aggregate(Sale, :count) == 1
   end
@@ -116,7 +118,7 @@ defmodule RobinahsShopWeb.LiveFlowsTest do
     |> render_submit()
 
     view |> element("nav.staff-tabs a", "POS") |> render_click()
-    view |> element(".product-card-pos", product.name) |> render_click()
+    view |> element("#item-row-#{product.id} .item-name") |> render_click()
 
     view |> element(".pay-btn", "Mobile money") |> render_click()
 

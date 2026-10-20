@@ -394,11 +394,24 @@ defmodule RobinahsShopWeb.StaffLive do
 
   def total(products, cart), do: Cart.total(products, cart)
 
+  @doc "Number of distinct products currently selected in the sale."
+  def line_count(cart), do: map_size(cart)
+
+  @doc "Spreadsheet rows: one per selected product with its sub total."
   def cart_line(products, cart) do
     Enum.map(Cart.items(products, cart), fn p ->
       %{product: p, quantity: Map.get(cart, to_string(p.id), 0), total: Cart.row_total(p, cart)}
     end)
   end
+
+  @doc "Sub total (sum of every selected line). VAT is not charged at the counter."
+  def subtotal(products, cart), do: Cart.total(products, cart)
+
+  @doc "Total number of units across all selected lines."
+  def total_units(_products, cart), do: cart_count(cart)
+
+  @doc "Grand total posted at checkout: sub total with no tax added."
+  def grand_total(products, cart), do: subtotal(products, cart)
 
   def visible_products(products, category, q) do
     term = String.downcase(q)
