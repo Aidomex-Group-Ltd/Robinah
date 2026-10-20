@@ -95,7 +95,10 @@
         <div>
           <span class="eyebrow">COUNTER</span><h1>Point of sale</h1><p>
             Search by product name or SKU. Prices, totals and stock are confirmed on the server.
-          </p>
+          </p><span class="live-clock"><i></i>Now: {Calendar.strftime(
+            @now,
+            "%d %b %Y, %H:%M"
+          )} EAT</span>
         </div>
         <div class="page-actions">
           <a href={~p"/staff/receiving"} class="button-primary receive-btn">

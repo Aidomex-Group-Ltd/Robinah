@@ -391,7 +391,7 @@ defmodule RobinahsShopWeb.StaffLive do
     {:noreply, socket}
   end
 
-  defp schedule_tick, do: Process.send_after(self(), :tick, 30_000)
+  defp schedule_tick, do: Process.send_after(self(), :tick, 15_000)
 
   defp today_filters(today),
     do: %{"from" => Date.to_iso8601(today), "to" => Date.to_iso8601(today)}
